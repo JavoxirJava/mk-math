@@ -1,0 +1,13 @@
+{
+  "name": "uzmath-mini",
+  "version": "1.0.0",
+  "description": "Mathematics game for Uzbekistan primary school students (Grade 2, 3, 4)",
+  "main": "server/app.js",
+  "scripts": {
+    "start": "node server/app.js",
+    "dev": "node --watch server/app.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0"
+  }
+}

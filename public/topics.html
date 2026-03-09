@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mavzular — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+    .topic-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .topic-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .mode-btn { transition: transform 0.15s; }
+    .mode-btn:hover { transform: scale(1.03); }
+    .mode-btn.selected { ring: 2; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm shadow-sm">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg hover:bg-indigo-700">M</a>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">UzMath Mini</h1>
+          <p id="gradeLabel" class="text-xs text-gray-500"></p>
+        </div>
+      </div>
+      <a href="index.html" class="text-sm text-indigo-600 hover:text-indigo-800 font-semibold">Orqaga</a>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Topics Section -->
+    <section class="mb-10">
+      <h2 class="text-2xl font-bold text-gray-800 mb-6">Mavzuni tanlang</h2>
+      <div id="topicsList" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Filled by JS -->
+      </div>
+    </section>
+
+    <!-- Game Mode Section (hidden until topic selected) -->
+    <section id="modeSection" class="hidden">
+      <h2 class="text-2xl font-bold text-gray-800 mb-2">O'yin turini tanlang</h2>
+      <p id="selectedTopicLabel" class="text-gray-500 mb-6"></p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+
+        <button onclick="startGame('quick')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-emerald-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#9889;</span>
+            <h3 class="font-bold text-gray-800">Tezkor test</h3>
+          </div>
+          <p class="text-sm text-gray-500">10 ta savol, MCQ formatda</p>
+        </button>
+
+        <button onclick="startGame('time')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-blue-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#9200;</span>
+            <h3 class="font-bold text-gray-800">Vaqt chaqiriq</h3>
+          </div>
+          <p class="text-sm text-gray-500">60 soniya ichida ko'proq yech!</p>
+        </button>
+
+        <button onclick="startGame('missing')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-amber-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#10067;</span>
+            <h3 class="font-bold text-gray-800">Yo'qolgan son</h3>
+          </div>
+          <p class="text-sm text-gray-500">Bo'sh joyni to'ldiring</p>
+        </button>
+
+        <button onclick="startGame('truefalse')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-rose-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#9989;</span>
+            <h3 class="font-bold text-gray-800">To'g'ri / Noto'g'ri</h3>
+          </div>
+          <p class="text-sm text-gray-500">Javob to'g'rimi?</p>
+        </button>
+
+        <button onclick="startGame('comparison')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-cyan-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#9878;</span>
+            <h3 class="font-bold text-gray-800">Taqqoslash</h3>
+          </div>
+          <p class="text-sm text-gray-500">Kattami, kichikmi, tengmi?</p>
+        </button>
+
+        <button onclick="startGame('champion')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-yellow-400">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#127942;</span>
+            <h3 class="font-bold text-gray-800">Chempion rejim</h3>
+          </div>
+          <p class="text-sm text-gray-500">Aralash, qiyinlashib boradi</p>
+        </button>
+
+        <button onclick="startGame('balloon')" class="mode-btn bg-gradient-to-br from-sky-50 to-pink-50 rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-pink-400 relative overflow-hidden">
+          <div class="flex items-center gap-3 mb-2">
+            <span class="text-2xl">&#127880;</span>
+            <h3 class="font-bold text-gray-800">Sharlar o'yini</h3>
+          </div>
+          <p class="text-sm text-gray-500">Uchayotgan sharlarni yorib javob ber!</p>
+          <span class="absolute top-2 right-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">YANGI</span>
+        </button>
+
+      </div>
+
+      <!-- Difficulty -->
+      <div class="flex items-center gap-4 mb-6">
+        <span class="text-sm font-semibold text-gray-600">Qiyinlik:</span>
+        <div class="flex gap-2">
+          <button onclick="setDifficulty(1)" id="diff1" class="diff-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-emerald-100 text-emerald-700 border-2 border-emerald-400">Oson</button>
+          <button onclick="setDifficulty(2)" id="diff2" class="diff-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 border-2 border-transparent">O'rta</button>
+          <button onclick="setDifficulty(3)" id="diff3" class="diff-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 border-2 border-transparent">Qiyin</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const grade = params.get("grade") || "2";
+    let selectedTopic = null;
+    let difficulty = 1;
+
+    const gradeColors = { "2": "emerald", "3": "blue", "4": "purple" };
+    const color = gradeColors[grade] || "blue";
+
+    document.getElementById("gradeLabel").textContent = `${grade}-sinf`;
+
+    // Load topics from API
+    fetch(`/api/topics?grade=${grade}`)
+      .then((r) => r.json())
+      .then((data) => {
+        const container = document.getElementById("topicsList");
+        data.topics.forEach((topic) => {
+          const card = document.createElement("button");
+          card.className = `topic-card bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-${color}-400`;
+          card.dataset.topicId = topic.id;
+          card.innerHTML = `
+            <h3 class="font-bold text-gray-800 mb-1">${topic.name}</h3>
+            <p class="text-sm text-gray-500">${topic.description}</p>
+          `;
+          card.addEventListener("click", () => selectTopic(topic));
+          container.appendChild(card);
+        });
+      });
+
+    function selectTopic(topic) {
+      selectedTopic = topic;
+      // Highlight selected
+      document.querySelectorAll(".topic-card").forEach((c) => {
+        c.classList.remove(`border-${color}-400`, "bg-indigo-50");
+        c.classList.add("border-transparent");
+      });
+      const active = document.querySelector(`[data-topic-id="${topic.id}"]`);
+      if (active) {
+        active.classList.add(`border-${color}-400`, "bg-indigo-50");
+        active.classList.remove("border-transparent");
+      }
+      // Show mode section
+      document.getElementById("modeSection").classList.remove("hidden");
+      document.getElementById("selectedTopicLabel").textContent = topic.name;
+      // Scroll to modes
+      document.getElementById("modeSection").scrollIntoView({ behavior: "smooth" });
+    }
+
+    function setDifficulty(d) {
+      difficulty = d;
+      const colors = { 1: "emerald", 2: "amber", 3: "rose" };
+      const c = colors[d];
+      document.querySelectorAll(".diff-btn").forEach((btn) => {
+        btn.className = `diff-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-gray-100 text-gray-600 border-2 border-transparent`;
+      });
+      const active = document.getElementById(`diff${d}`);
+      active.className = `diff-btn px-4 py-1.5 rounded-full text-sm font-semibold bg-${c}-100 text-${c}-700 border-2 border-${c}-400`;
+    }
+
+    function startGame(mode) {
+      if (!selectedTopic) {
+        alert("Avval mavzuni tanlang!");
+        return;
+      }
+      const params = new URLSearchParams({
+        grade,
+        topic: selectedTopic.id,
+        mode,
+        difficulty,
+        topicName: selectedTopic.name
+      });
+      const page = mode === "balloon" ? "balloon.html" : "game.html";
+      window.location.href = `${page}?${params}`;
+    }
+  </script>
+
+</body>
+</html>

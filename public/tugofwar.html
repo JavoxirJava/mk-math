@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arqon Tortish — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; overflow: hidden; user-select: none; margin: 0; }
+
+    /* ═══ Sky + ground background ═══ */
+    #bg {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(180deg, #7ec8e3 0%, #a8dcf0 35%, #c6e8c6 68%, #5a9a3a 72%, #4a8a2e 100%);
+    }
+    /* sun */
+    #bg::before {
+      content: ''; position: absolute; top: 28px; right: 60px;
+      width: 54px; height: 54px; border-radius: 50%;
+      background: #ffe066; box-shadow: 0 0 40px 14px rgba(255,224,102,0.45);
+    }
+    /* cloud */
+    .cloud {
+      position: absolute; border-radius: 50%; background: rgba(255,255,255,0.75);
+    }
+
+    /* ═══ Team panels ═══ */
+    .team-panel {
+      position: fixed; top: 0; bottom: 0; width: 248px;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 10px 10px 8px; z-index: 20;
+      background: rgba(255,255,255,0.12); backdrop-filter: blur(2px);
+    }
+    .team-panel.left  { left: 0; }
+    .team-panel.right { right: 0; }
+
+    .team-header {
+      width: 100%; border-radius: 16px; padding: 7px 14px;
+      font-size: 17px; font-weight: 900; color: white;
+      text-align: center; display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .team1-bg { background: linear-gradient(135deg, #2563EB, #1d4ed8); }
+    .team2-bg { background: linear-gradient(135deg, #DC2626, #b91c1c); }
+
+    .question-box {
+      width: 100%; background: white; border-radius: 14px;
+      padding: 10px 8px; text-align: center; margin-bottom: 6px;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+    }
+    .question-text { font-size: 24px; font-weight: 900; margin-bottom: 5px; }
+    .answer-display {
+      font-size: 22px; font-weight: 700; color: #4b5563;
+      background: #f3f4f6; border-radius: 10px;
+      padding: 4px 14px; min-height: 36px; min-width: 56px;
+      display: inline-block; letter-spacing: 2px;
+      border: 2px solid #e5e7eb;
+    }
+
+    /* Numpad */
+    .numpad { display: grid; grid-template-columns: repeat(3,1fr); gap: 5px; width: 100%; margin-bottom: 5px; }
+    .num-btn {
+      background: white; border: none; border-radius: 12px;
+      font-size: 20px; font-weight: 800; color: #1f2937;
+      padding: 11px 0; cursor: pointer;
+      box-shadow: 0 3px 0 #d1d5db; transition: transform 0.08s;
+    }
+    .num-btn:active { transform: translateY(2px); box-shadow: 0 1px 0 #d1d5db; }
+
+    .action-row { display: flex; gap: 5px; width: 100%; }
+    .clear-btn {
+      flex: 1; background: #fee2e2; border: none; border-radius: 12px;
+      font-size: 18px; font-weight: 800; color: #dc2626;
+      padding: 10px 0; cursor: pointer; box-shadow: 0 3px 0 #fca5a5;
+    }
+    .clear-btn:active { transform: translateY(2px); }
+    .back-btn {
+      flex: 1; background: #f3f4f6; border: none; border-radius: 12px;
+      font-size: 18px; font-weight: 800; color: #6b7280;
+      padding: 10px 0; cursor: pointer; box-shadow: 0 3px 0 #d1d5db;
+    }
+    .back-btn:active { transform: translateY(2px); }
+
+    .submit-btn {
+      width: 100%; border: none; border-radius: 14px;
+      font-size: 20px; font-weight: 900; color: white;
+      padding: 13px 0; cursor: pointer; margin-top: 5px;
+      transition: transform 0.1s; letter-spacing: 1px;
+    }
+    .submit-btn.t1 { background: linear-gradient(135deg,#2563EB,#1d4ed8); box-shadow: 0 4px 0 #1e40af; }
+    .submit-btn.t2 { background: linear-gradient(135deg,#DC2626,#b91c1c); box-shadow: 0 4px 0 #991b1b; }
+    .submit-btn:active { transform: translateY(3px); }
+
+    /* Flash */
+    @keyframes flashG { 0%,100%{background:white} 50%{background:#d1fae5} }
+    @keyframes flashR { 0%,100%{background:white} 50%{background:#fee2e2} }
+    .flash-ok   { animation: flashG 0.35s ease; }
+    .flash-bad  { animation: flashR 0.35s ease; }
+
+    /* ═══ Center arena ═══ */
+    #arena {
+      position: fixed; left: 248px; right: 248px; top: 0; bottom: 0;
+      display: flex; flex-direction: column; align-items: center;
+      z-index: 10; padding-top: 8px; overflow: hidden;
+    }
+
+    /* Scoreboard */
+    #scoreboard {
+      display: flex; align-items: center; gap: 18px;
+      background: rgba(255,255,255,0.92); border-radius: 22px;
+      padding: 6px 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+      z-index: 15;
+    }
+    .sb-team { font-size: 14px; font-weight: 900; }
+    .sb-score { font-size: 22px; font-weight: 900; }
+
+    /* Timer */
+    #timerCircle {
+      width: 58px; height: 58px; border-radius: 50%;
+      background: white; display: flex; align-items: center; justify-content: center;
+      font-size: 22px; font-weight: 900; color: #374151;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #timerCircle.warn { color: #dc2626; animation: timerPulse 0.5s infinite; }
+    @keyframes timerPulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+    /* ═══ Tug scene ═══ */
+    #tugScene {
+      position: relative; width: 100%; flex: 1;
+      display: flex; align-items: flex-end; justify-content: center;
+    }
+
+    /* Ground */
+    #groundSvg { position: absolute; bottom: 0; left: 0; width: 100%; height: 70px; }
+
+    /* Center line */
+    #centerLine {
+      position: absolute; bottom: 0; left: 50%; width: 2px; height: 90px;
+      border-left: 2px dashed rgba(255,255,255,0.5);
+      transform: translateX(-1px); pointer-events: none;
+    }
+
+    /* Rope */
+    #ropeSvg {
+      position: absolute; width: 100%; bottom: 108px; left: 0; height: 24px;
+      pointer-events: none; z-index: 12;
+    }
+
+    /* Flag */
+    #flag {
+      position: absolute; bottom: 116px; z-index: 14;
+      transition: left 0.5s cubic-bezier(.34,1.56,.64,1);
+      transform: translateX(-50%);
+    }
+
+    /* ═══ Character groups ═══ */
+    .char-group {
+      position: absolute; bottom: 60px;
+      display: flex; align-items: flex-end; gap: -4px;
+      transition: left 0.5s cubic-bezier(.34,1.56,.64,1);
+      z-index: 13;
+    }
+    #team1g { left: calc(50% - 200px); flex-direction: row-reverse; }
+    #team2g { left: calc(50% + 50px); flex-direction: row; }
+
+    .char-fig {
+      position: relative;
+    }
+    /* Team 2 chars face left */
+    #team2g .char-fig { transform: scaleX(-1); }
+
+    /* Pulling strain animation */
+    @keyframes strain1 {
+      0%, 100% { transform: translateX(0); }
+      50% { transform: translateX(-3px); }
+    }
+    @keyframes strain2 {
+      0%, 100% { transform: scaleX(-1) translateX(0); }
+      50% { transform: scaleX(-1) translateX(3px); }
+    }
+    .pulling #team1g .char-fig { animation: strain1 1.2s ease-in-out infinite; }
+    .pulling #team2g .char-fig { animation: strain2 1.2s ease-in-out infinite; }
+
+    /* Tug burst when team scores */
+    @keyframes tugBurst1 { 0%{transform:translateX(0)} 40%{transform:translateX(-18px)} 100%{transform:translateX(0)} }
+    @keyframes tugBurst2 { 0%{transform:translateX(0)} 40%{transform:translateX(18px)} 100%{transform:translateX(0)} }
+    #team1g.scored { animation: tugBurst1 0.45s ease-out; }
+    #team2g.scored { animation: tugBurst2 0.45s ease-out; }
+
+    /* ═══ Overlays ═══ */
+    #setupOverlay {
+      position: fixed; inset: 0; z-index: 200;
+      background: linear-gradient(135deg, #2563EB 0%, #7C3AED 50%, #DC2626 100%);
+      display: flex; align-items: center; justify-content: center;
+    }
+    #setupCard {
+      background: white; border-radius: 28px; padding: 32px 44px;
+      text-align: center; min-width: 340px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .sbtn {
+      border: none; border-radius: 14px; padding: 12px 24px;
+      font-size: 16px; font-weight: 800; cursor: pointer;
+      transition: all 0.12s; margin: 5px;
+    }
+    .sbtn:hover { transform: translateY(-2px); }
+    .sbtn.on { outline: 3px solid #6366f1; transform: scale(1.06); }
+
+    #winOverlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 100; display: none; align-items: center; justify-content: center;
+    }
+    #winOverlay.show { display: flex; }
+    #winCard {
+      background: white; border-radius: 28px; padding: 36px 56px;
+      text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popIn 0.4s cubic-bezier(.34,1.56,.64,1);
+    }
+    @keyframes popIn { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+
+    /* Confetti */
+    .cnft {
+      position: fixed; top: -20px; pointer-events: none; z-index: 110;
+      animation: cnftFall var(--d) linear forwards;
+    }
+    @keyframes cnftFall {
+      0%   { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+      100% { transform: translateY(110vh) rotateZ(var(--r)); opacity: 0; }
+    }
+
+    /* Back link */
+    #arenaBack { position: absolute; bottom: 6px; z-index: 15; }
+
+    /* ═══ Responsive ═══ */
+    @media (max-width: 960px) {
+      .team-panel { width: 190px; }
+      #arena { left: 190px; right: 190px; }
+      .num-btn { font-size: 17px; padding: 9px 0; }
+      .question-text { font-size: 20px; }
+      .submit-btn { font-size: 17px; padding: 11px 0; }
+      .char-fig svg { width: 48px; height: 88px; }
+      #team1g { left: calc(50% - 160px); }
+      #team2g { left: calc(50% + 20px); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ Background ═══ -->
+<div id="bg"></div>
+
+<!-- ═══ SETUP OVERLAY ═══ -->
+<div id="setupOverlay">
+  <div id="setupCard">
+    <div class="text-5xl mb-2">&#127942;</div>
+    <h1 class="text-2xl font-black text-gray-800 mb-0.5">Arqon Tortish</h1>
+    <p class="text-gray-400 text-sm mb-5">2 o'yinchi &bull; Matematik musobaqa</p>
+    <div class="mb-4">
+      <p class="text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Sinf</p>
+      <div id="gradeButtons">
+        <button class="sbtn bg-emerald-100 text-emerald-700 on" data-grade="2">2-sinf</button>
+        <button class="sbtn bg-blue-100 text-blue-700" data-grade="3">3-sinf</button>
+        <button class="sbtn bg-purple-100 text-purple-700" data-grade="4">4-sinf</button>
+      </div>
+    </div>
+    <div class="mb-5">
+      <p class="text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wider">Vaqt</p>
+      <div id="timeButtons">
+        <button class="sbtn bg-gray-100 text-gray-700" data-time="60">60s</button>
+        <button class="sbtn bg-gray-100 text-gray-700 on" data-time="90">90s</button>
+        <button class="sbtn bg-gray-100 text-gray-700" data-time="120">120s</button>
+      </div>
+    </div>
+    <button id="startBtn" class="w-full bg-indigo-600 text-white font-black text-xl py-4 rounded-2xl hover:bg-indigo-700 transition" style="box-shadow:0 5px 0 #3730a3">
+      &#9654; Boshlash
+    </button>
+    <a href="index.html" class="block mt-2.5 text-xs text-gray-400 hover:text-gray-600">&larr; Bosh sahifa</a>
+  </div>
+</div>
+
+<!-- ═══ TEAM 1 PANEL ═══ -->
+<div class="team-panel left" id="panel1">
+  <div class="team-header team1-bg">
+    <span>Jamoa 1</span>
+    <span id="sc1" class="text-2xl font-black">0</span>
+  </div>
+  <div class="question-box" id="qb1">
+    <div class="question-text text-blue-700" id="qt1">? + ? = ?</div>
+    <div class="answer-display" id="ad1">0</div>
+  </div>
+  <div class="numpad">
+    <button class="num-btn" onclick="np(1,1)">1</button><button class="num-btn" onclick="np(1,2)">2</button><button class="num-btn" onclick="np(1,3)">3</button>
+    <button class="num-btn" onclick="np(1,4)">4</button><button class="num-btn" onclick="np(1,5)">5</button><button class="num-btn" onclick="np(1,6)">6</button>
+    <button class="num-btn" onclick="np(1,7)">7</button><button class="num-btn" onclick="np(1,8)">8</button><button class="num-btn" onclick="np(1,9)">9</button>
+  </div>
+  <div class="action-row mb-1">
+    <button class="clear-btn" onclick="nc(1)">&times;</button>
+    <button class="num-btn" style="flex:1;border-radius:12px" onclick="np(1,0)">0</button>
+    <button class="back-btn" onclick="nb(1)">&larr;</button>
+  </div>
+  <button class="submit-btn t1" onclick="sub(1)">&#10003; Javob</button>
+</div>
+
+<!-- ═══ TEAM 2 PANEL ═══ -->
+<div class="team-panel right" id="panel2">
+  <div class="team-header team2-bg">
+    <span id="sc2" class="text-2xl font-black">0</span>
+    <span>Jamoa 2</span>
+  </div>
+  <div class="question-box" id="qb2">
+    <div class="question-text text-red-600" id="qt2">? + ? = ?</div>
+    <div class="answer-display" id="ad2">0</div>
+  </div>
+  <div class="numpad">
+    <button class="num-btn" onclick="np(2,1)">1</button><button class="num-btn" onclick="np(2,2)">2</button><button class="num-btn" onclick="np(2,3)">3</button>
+    <button class="num-btn" onclick="np(2,4)">4</button><button class="num-btn" onclick="np(2,5)">5</button><button class="num-btn" onclick="np(2,6)">6</button>
+    <button class="num-btn" onclick="np(2,7)">7</button><button class="num-btn" onclick="np(2,8)">8</button><button class="num-btn" onclick="np(2,9)">9</button>
+  </div>
+  <div class="action-row mb-1">
+    <button class="clear-btn" onclick="nc(2)">&times;</button>
+    <button class="num-btn" style="flex:1;border-radius:12px" onclick="np(2,0)">0</button>
+    <button class="back-btn" onclick="nb(2)">&larr;</button>
+  </div>
+  <button class="submit-btn t2" onclick="sub(2)">&#10003; Javob</button>
+</div>
+
+<!-- ═══ CENTER ARENA ═══ -->
+<div id="arena">
+  <div id="scoreboard">
+    <div class="text-center">
+      <div class="sb-team text-blue-600">Jamoa 1</div>
+      <div class="sb-score text-blue-700" id="sb1">0</div>
+    </div>
+    <div id="timerCircle"><span id="timerText">90</span></div>
+    <div class="text-center">
+      <div class="sb-team text-red-600">Jamoa 2</div>
+      <div class="sb-score text-red-700" id="sb2">0</div>
+    </div>
+  </div>
+
+  <div id="tugScene" class="pulling">
+    <!-- Center dashed line -->
+    <div id="centerLine"></div>
+
+    <!-- Ground -->
+    <svg id="groundSvg" viewBox="0 0 600 70" preserveAspectRatio="none">
+      <rect x="0" y="18" width="600" height="52" fill="#4a8a2e"/>
+      <rect x="0" y="18" width="600" height="5" fill="#5a9a3a"/>
+      <!-- grass blades -->
+      <g fill="#5eb835" opacity="0.7">
+        <path d="M20,18 L23,6 L26,18"/><path d="M60,18 L62,4 L65,18"/><path d="M110,18 L113,8 L116,18"/>
+        <path d="M160,18 L162,5 L165,18"/><path d="M220,18 L224,7 L227,18"/><path d="M270,18 L272,3 L276,18"/>
+        <path d="M330,18 L333,6 L336,18"/><path d="M380,18 L383,8 L386,18"/><path d="M440,18 L442,5 L445,18"/>
+        <path d="M500,18 L503,7 L506,18"/><path d="M550,18 L553,4 L556,18"/><path d="M590,18 L593,8 L596,18"/>
+      </g>
+    </svg>
+
+    <!-- Rope -->
+    <svg id="ropeSvg" viewBox="0 0 600 24" preserveAspectRatio="none">
+      <line x1="0" y1="12" x2="600" y2="12" stroke="#5c3317" stroke-width="7" stroke-linecap="round"/>
+      <line x1="0" y1="9" x2="600" y2="9" stroke="#7a4a2a" stroke-width="2" opacity="0.5"/>
+      <line x1="0" y1="15" x2="600" y2="15" stroke="#3d200d" stroke-width="2" opacity="0.4"/>
+      <!-- rope twist marks -->
+      <g stroke="#8b5e3c" stroke-width="2.5" opacity="0.35">
+        <line x1="40" y1="7" x2="50" y2="17"/><line x1="80" y1="7" x2="90" y2="17"/>
+        <line x1="120" y1="7" x2="130" y2="17"/><line x1="160" y1="7" x2="170" y2="17"/>
+        <line x1="200" y1="7" x2="210" y2="17"/><line x1="240" y1="7" x2="250" y2="17"/>
+        <line x1="280" y1="7" x2="290" y2="17"/><line x1="320" y1="7" x2="330" y2="17"/>
+        <line x1="360" y1="7" x2="370" y2="17"/><line x1="400" y1="7" x2="410" y2="17"/>
+        <line x1="440" y1="7" x2="450" y2="17"/><line x1="480" y1="7" x2="490" y2="17"/>
+        <line x1="520" y1="7" x2="530" y2="17"/><line x1="560" y1="7" x2="570" y2="17"/>
+      </g>
+    </svg>
+
+    <!-- Flag marker -->
+    <div id="flag" style="left:50%">
+      <svg width="24" height="50" viewBox="0 0 24 50">
+        <line x1="12" y1="0" x2="12" y2="50" stroke="#374151" stroke-width="3"/>
+        <polygon points="12,3 24,10 12,17" fill="#ef4444"/>
+        <circle cx="12" cy="50" r="3" fill="#374151"/>
+      </svg>
+    </div>
+
+    <!-- Team 1 characters (facing right toward center) -->
+    <div class="char-group" id="team1g"></div>
+
+    <!-- Team 2 characters (mirrored to face left toward center) -->
+    <div class="char-group" id="team2g"></div>
+  </div>
+
+  <div id="arenaBack">
+    <a href="index.html" class="text-xs font-bold text-white/60 hover:text-white">&larr; Bosh sahifa</a>
+  </div>
+</div>
+
+<!-- ═══ WIN OVERLAY ═══ -->
+<div id="winOverlay">
+  <div id="winCard">
+    <div id="winEmoji" class="text-7xl mb-3">&#127942;</div>
+    <h2 id="winTitle" class="text-3xl font-black mb-1"></h2>
+    <p id="winSub" class="text-gray-500 mb-5"></p>
+    <div class="flex gap-8 justify-center mb-5">
+      <div class="text-center"><div class="text-blue-600 text-3xl font-black" id="fs1">0</div><div class="text-gray-400 text-sm">Jamoa 1</div></div>
+      <div class="text-gray-300 text-3xl font-bold">vs</div>
+      <div class="text-center"><div class="text-red-600 text-3xl font-black" id="fs2">0</div><div class="text-gray-400 text-sm">Jamoa 2</div></div>
+    </div>
+    <div class="flex gap-3 justify-center">
+      <button onclick="restart()" class="bg-indigo-600 text-white font-bold text-lg px-7 py-3 rounded-2xl hover:bg-indigo-700 transition">&#128260; Qayta</button>
+      <a href="index.html" class="bg-gray-100 text-gray-700 font-bold text-lg px-7 py-3 rounded-2xl hover:bg-gray-200 transition">&#127968; Bosh sahifa</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════
+//  CHARACTER SVG BUILDER
+//  O'zbek milliy kiyim: do'ppi, chapan, belbog', mahsi
+// ════════════════════════════════════════
+const SKIN = '#deb887';
+const SKIN_SHADOW = '#c49a6c';
+
+const PALETTE = {
+  1: { // Ko'k jamoa
+    chapan: '#2e7dd1', chapanLight: '#5ba3e8', chapanDark: '#1b5ea0',
+    stripe1: '#7ec4f7', stripe2: '#bde0fb',
+    doppi: '#1b5ea0', doppiRim: '#3b8ed4', doppiPat: '#a8d8f7',
+    belt: '#d4a017', beltLine: '#b8860b',
+    sleeve: '#2468b0',
+  },
+  2: { // Qizil jamoa
+    chapan: '#c93030', chapanLight: '#e05555', chapanDark: '#971e1e',
+    stripe1: '#f09090', stripe2: '#f7c4c4',
+    doppi: '#971e1e', doppiRim: '#d14040', doppiPat: '#f5a8a8',
+    belt: '#d4a017', beltLine: '#b8860b',
+    sleeve: '#a82828',
+  }
+};
+
+function buildChar(team, variant) {
+  const c = PALETTE[team];
+  // Variant sizes: 0=normal, 1=shorter, 2=taller
+  const heights = [100, 92, 106];
+  const h = heights[variant];
+  const sc = h / 100; // scale everything
+  const W = 72, H = Math.round(130 * sc);
+  // Lean angle
+  const lean = -13;
+  const pivotX = 36, pivotY = Math.round(108 * sc);
+
+  // Helper: scale y coordinate
+  const y = (v) => Math.round(v * sc);
+  const x = (v) => v; // x doesn't scale (keeps width consistent)
+
+  return `<svg viewBox="0 0 ${W} ${H}" width="${Math.round(W*0.72)}" height="${Math.round(H*0.72)}" overflow="visible" class="char-svg">
+  <g transform="rotate(${lean}, ${pivotX}, ${pivotY})">
+    <!-- Soya (shadow) -->
+    <ellipse cx="36" cy="${y(116)}" rx="20" ry="4" fill="rgba(0,0,0,0.1)"/>
+
+    <!-- Mahsi (boots) -->
+    <rect x="20" y="${y(100)}" width="11" height="${y(14)}" rx="3" fill="#2d1b0e"/>
+    <rect x="41" y="${y(100)}" width="11" height="${y(14)}" rx="3" fill="#2d1b0e"/>
+    <!-- Burun (boot toe) -->
+    <rect x="16" y="${y(109)}" width="15" height="${y(6)}" rx="2.5" fill="#3a2415"/>
+    <rect x="41" y="${y(109)}" width="15" height="${y(6)}" rx="2.5" fill="#3a2415"/>
+    <!-- Boot top trim -->
+    <rect x="20" y="${y(100)}" width="11" height="${y(3)}" rx="1" fill="#4a3020"/>
+    <rect x="41" y="${y(100)}" width="11" height="${y(3)}" rx="1" fill="#4a3020"/>
+
+    <!-- Ishton (pants) -->
+    <rect x="22" y="${y(84)}" width="10" height="${y(20)}" rx="3" fill="#e8e4de"/>
+    <rect x="40" y="${y(84)}" width="10" height="${y(20)}" rx="3" fill="#e8e4de"/>
+
+    <!-- Orqa qo'l — arqonni tutib, tana ortida chiziladi -->
+    <line x1="28" y1="${y(46)}" x2="64" y2="${y(50)}" stroke="${c.sleeve}" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="64" cy="${y(50)}" r="4" fill="${SKIN}"/>
+
+    <!-- Chapan pastki qismi (lower robe) -->
+    <path d="M16,${y(62)} L13,${y(88)} L59,${y(88)} L56,${y(62)} Z" fill="${c.chapan}"/>
+    <!-- Atlas naqsh (stripe pattern) -->
+    <line x1="24" y1="${y(62)}" x2="22" y2="${y(86)}" stroke="${c.stripe1}" stroke-width="2.5" opacity="0.55"/>
+    <line x1="36" y1="${y(62)}" x2="36" y2="${y(86)}" stroke="${c.stripe2}" stroke-width="1.5" opacity="0.35"/>
+    <line x1="48" y1="${y(62)}" x2="50" y2="${y(86)}" stroke="${c.stripe1}" stroke-width="2.5" opacity="0.55"/>
+    <!-- Chapan hem detail -->
+    <line x1="13" y1="${y(87)}" x2="59" y2="${y(87)}" stroke="${c.chapanDark}" stroke-width="1.5"/>
+
+    <!-- Chapan yuqori qismi (upper robe) -->
+    <path d="M19,${y(36)} L16,${y(64)} L56,${y(64)} L53,${y(36)} Z" fill="${c.chapan}"/>
+    <!-- Ustki naqshlar -->
+    <line x1="27" y1="${y(36)}" x2="25" y2="${y(62)}" stroke="${c.stripe1}" stroke-width="2" opacity="0.45"/>
+    <line x1="45" y1="${y(36)}" x2="47" y2="${y(62)}" stroke="${c.stripe1}" stroke-width="2" opacity="0.45"/>
+    <!-- Yoqa (V collar) -->
+    <path d="M29,${y(36)} L36,${y(50)} L43,${y(36)}" fill="#f0ece4"/>
+    <path d="M29,${y(36)} L36,${y(50)} L43,${y(36)}" fill="none" stroke="${c.chapanDark}" stroke-width="0.8"/>
+    <!-- Collar edge decoration -->
+    <line x1="29" y1="${y(36)}" x2="36" y2="${y(50)}" stroke="#d4a017" stroke-width="1" opacity="0.6"/>
+    <line x1="43" y1="${y(36)}" x2="36" y2="${y(50)}" stroke="#d4a017" stroke-width="1" opacity="0.6"/>
+
+    <!-- Belbog' (belt/sash) -->
+    <rect x="14" y="${y(59)}" width="44" height="${y(6)}" rx="2" fill="${c.belt}"/>
+    <line x1="14" y1="${y(62)}" x2="58" y2="${y(62)}" stroke="${c.beltLine}" stroke-width="1"/>
+    <!-- Belbog' tuguni (knot detail) -->
+    <circle cx="36" cy="${y(62)}" r="${y(3)}" fill="${c.belt}" stroke="${c.beltLine}" stroke-width="0.8"/>
+
+    <!-- Oldingi qo'l — arqonni tutib, tana ustida -->
+    <line x1="48" y1="${y(42)}" x2="72" y2="${y(47)}" stroke="${c.sleeve}" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="70" cy="${y(46)}" r="5" fill="${c.sleeve}"/>
+    <circle cx="73" cy="${y(47)}" r="4.5" fill="${SKIN}"/>
+
+    <!-- Bosh (head) -->
+    <circle cx="36" cy="${y(24)}" r="${y(13)}" fill="${SKIN}"/>
+    <!-- Quloq -->
+    <ellipse cx="50" cy="${y(25)}" rx="3" ry="${y(4)}" fill="${SKIN_SHADOW}"/>
+    <!-- Yuz detallari -->
+    <!-- Ko'zlar -->
+    <ellipse cx="31" cy="${y(22)}" rx="2" ry="2.2" fill="#2d2015"/>
+    <ellipse cx="42" cy="${y(22)}" rx="2" ry="2.2" fill="#2d2015"/>
+    <!-- Ko'z porlashi -->
+    <circle cx="32" cy="${y(21)}" r="0.9" fill="white"/>
+    <circle cx="43" cy="${y(21)}" r="0.9" fill="white"/>
+    <!-- Qosh -->
+    <path d="M28,${y(18)} Q31,${y(16)} 34,${y(18)}" fill="none" stroke="#5a4030" stroke-width="1.2"/>
+    <path d="M39,${y(18)} Q42,${y(16)} 45,${y(18)}" fill="none" stroke="#5a4030" stroke-width="1.2"/>
+    <!-- Og'iz (determined expression) -->
+    <path d="M32,${y(28)} Q36,${y(31)} 40,${y(28)}" fill="none" stroke="#8b6046" stroke-width="1.3"/>
+    <!-- Yonoq qizilligi -->
+    <circle cx="26" cy="${y(26)}" rx="3" ry="2.5" fill="#e8a080" opacity="0.35"/>
+    <circle cx="46" cy="${y(26)}" rx="3" ry="2.5" fill="#e8a080" opacity="0.35"/>
+
+    <!-- Do'ppi (traditional cap) -->
+    <!-- Asosiy qism -->
+    <path d="M22,${y(15)} L22,${y(6)} C23,${y(1)} 49,${y(1)} 50,${y(6)} L50,${y(15)} Z" fill="${c.doppi}"/>
+    <!-- Tepa qismi -->
+    <rect x="23" y="${y(1)}" width="26" height="${y(5)}" rx="4" fill="${c.doppiRim}"/>
+    <!-- Bodom naqsh (almond pattern) -->
+    <ellipse cx="29" cy="${y(10)}" rx="3" ry="2" fill="none" stroke="${c.doppiPat}" stroke-width="0.9"/>
+    <ellipse cx="36" cy="${y(10)}" rx="3" ry="2" fill="none" stroke="${c.doppiPat}" stroke-width="0.9"/>
+    <ellipse cx="43" cy="${y(10)}" rx="3" ry="2" fill="none" stroke="${c.doppiPat}" stroke-width="0.9"/>
+    <!-- Naqsh ichidagi nuqtalar -->
+    <circle cx="29" cy="${y(10)}" r="0.8" fill="${c.doppiPat}"/>
+    <circle cx="36" cy="${y(10)}" r="0.8" fill="${c.doppiPat}"/>
+    <circle cx="43" cy="${y(10)}" r="0.8" fill="${c.doppiPat}"/>
+    <!-- Pastki chiziq -->
+    <line x1="22" y1="${y(15)}" x2="50" y2="${y(15)}" stroke="${c.chapanDark}" stroke-width="1.2"/>
+    <!-- Do'ppi bandi -->
+    <rect x="22" y="${y(13)}" width="28" height="${y(3)}" rx="1" fill="${c.doppiRim}" opacity="0.7"/>
+  </g>
+</svg>`;
+}
+
+// Inject characters
+function spawnChars() {
+  const g1 = document.getElementById('team1g');
+  const g2 = document.getElementById('team2g');
+  g1.innerHTML = '';
+  g2.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const d1 = document.createElement('div');
+    d1.className = 'char-fig';
+    d1.innerHTML = buildChar(1, i);
+    g1.appendChild(d1);
+
+    const d2 = document.createElement('div');
+    d2.className = 'char-fig';
+    d2.innerHTML = buildChar(2, i);
+    g2.appendChild(d2);
+  }
+}
+
+// Init clouds
+(function initClouds() {
+  const bg = document.getElementById('bg');
+  const specs = [[8,12,120],[15,5,90],[75,8,140],[85,18,80],[45,3,100]];
+  specs.forEach(([left,top,w]) => {
+    const c = document.createElement('div');
+    c.className = 'cloud';
+    c.style.cssText = `left:${left}%;top:${top}%;width:${w}px;height:${w*0.4}px;opacity:${0.4+Math.random()*0.3}`;
+    bg.appendChild(c);
+  });
+})();
+
+// ════════════════════════════════════════
+//  QUESTION GENERATOR (client-side, same as before)
+// ════════════════════════════════════════
+function ri(a,b) { return Math.floor(Math.random()*(b-a+1))+a; }
+
+function genQ(grade) {
+  const ops = grade === 2 ? ['+','-'] : ['+','-','×','÷'];
+  const op = ops[ri(0, ops.length-1)];
+  let a, b, ans, txt;
+
+  if (grade === 2) {
+    if (op==='+') { a=ri(1,50); b=ri(1,50-a); ans=a+b; txt=`${a} + ${b} = ?`; }
+    else { a=ri(10,99); b=ri(1,a); ans=a-b; txt=`${a} − ${b} = ?`; }
+  } else if (grade === 3) {
+    if (op==='+') { a=ri(10,500); b=ri(10,500-a); ans=a+b; txt=`${a} + ${b} = ?`; }
+    else if (op==='-') { a=ri(100,999); b=ri(10,a); ans=a-b; txt=`${a} − ${b} = ?`; }
+    else if (op==='×') { a=ri(2,9); b=ri(2,9); ans=a*b; txt=`${a} × ${b} = ?`; }
+    else { a=ri(2,9); b=ri(2,9); ans=a; txt=`${a*b} ÷ ${b} = ?`; }
+  } else {
+    if (op==='+') { a=ri(100,5000); b=ri(100,5000-a); ans=a+b; txt=`${a} + ${b} = ?`; }
+    else if (op==='-') { a=ri(1000,9999); b=ri(100,a); ans=a-b; txt=`${a} − ${b} = ?`; }
+    else if (op==='×') { a=ri(2,12); b=ri(10,99); ans=a*b; txt=`${a} × ${b} = ?`; }
+    else { b=ri(2,9); ans=ri(10,99); a=ans*b; txt=`${a} ÷ ${b} = ?`; }
+  }
+  return { text: txt, answer: ans };
+}
+
+// ════════════════════════════════════════
+//  GAME STATE
+// ════════════════════════════════════════
+let selGrade = 2, gameTime = 90, timeLeft = 90, timerInt = null, active = false;
+let s1 = 0, s2 = 0, a1 = '', a2 = '';
+let q1 = null, q2 = null;
+let rope = 0; // -5..+5
+
+// ════════════════════════════════════════
+//  NUMPAD
+// ════════════════════════════════════════
+function np(t, d) {
+  if (!active) return;
+  if (t===1) { if(a1.length<6){a1+=d; ud(1);} }
+  else { if(a2.length<6){a2+=d; ud(2);} }
+}
+function nc(t) { if(!active)return; if(t===1){a1=''}else{a2=''} ud(t); }
+function nb(t) { if(!active)return; if(t===1){a1=a1.slice(0,-1)}else{a2=a2.slice(0,-1)} ud(t); }
+function ud(t) { document.getElementById(`ad${t}`).textContent = (t===1?a1:a2)||'0'; }
+
+// ════════════════════════════════════════
+//  SUBMIT
+// ════════════════════════════════════════
+function sub(t) {
+  if (!active) return;
+  const ans = t===1?a1:a2;
+  const q = t===1?q1:q2;
+  const box = document.getElementById(`qb${t}`);
+  if (!ans) return;
+
+  if (parseInt(ans) === q.answer) {
+    if (t===1) s1++; else s2++;
+    box.classList.remove('flash-ok'); void box.offsetWidth; box.classList.add('flash-ok');
+
+    // Move rope
+    rope += t===1 ? -1 : 1;
+    rope = Math.max(-5, Math.min(5, rope));
+    updateRope();
+
+    // Tug burst animation
+    const cg = document.getElementById(`team${t}g`);
+    cg.classList.remove('scored'); void cg.offsetWidth; cg.classList.add('scored');
+    setTimeout(() => cg.classList.remove('scored'), 500);
+
+    // New question
+    if (t===1) { a1=''; q1=genQ(selGrade); document.getElementById('qt1').textContent=q1.text; }
+    else { a2=''; q2=genQ(selGrade); document.getElementById('qt2').textContent=q2.text; }
+    ud(t);
+  } else {
+    box.classList.remove('flash-bad'); void box.offsetWidth; box.classList.add('flash-bad');
+    if(t===1){a1=''}else{a2=''}
+    ud(t);
+  }
+  updateScores();
+}
+
+// ════════════════════════════════════════
+//  ROPE
+// ════════════════════════════════════════
+function updateRope() {
+  const el = document.getElementById('arena');
+  const w = el.offsetWidth || 400;
+  const step = w * 0.06;
+  const offset = rope * step;
+
+  // Flag, arqon va ikkala jamoa BIRGA bir yo'nalishda harakatlanadi
+  document.getElementById('flag').style.left = `calc(50% + ${offset}px)`;
+  document.getElementById('team1g').style.left = `calc(50% - 200px + ${offset}px)`;
+  document.getElementById('team2g').style.left = `calc(50% + 50px + ${offset}px)`;
+
+  if (rope <= -5) endGame(1);
+  if (rope >= 5)  endGame(2);
+}
+
+function updateScores() {
+  document.getElementById('sc1').textContent = s1;
+  document.getElementById('sc2').textContent = s2;
+  document.getElementById('sb1').textContent = s1;
+  document.getElementById('sb2').textContent = s2;
+}
+
+// ════════════════════════════════════════
+//  TIMER
+// ════════════════════════════════════════
+function startTimer() {
+  timeLeft = gameTime;
+  const el = document.getElementById('timerText');
+  const circle = document.getElementById('timerCircle');
+  el.textContent = timeLeft;
+  circle.classList.remove('warn');
+  timerInt = setInterval(() => {
+    timeLeft--;
+    el.textContent = timeLeft;
+    if (timeLeft <= 10) circle.classList.add('warn');
+    if (timeLeft <= 0) {
+      clearInterval(timerInt);
+      if (s1>s2) endGame(1); else if (s2>s1) endGame(2); else endGame(0);
+    }
+  }, 1000);
+}
+
+// ════════════════════════════════════════
+//  START / END
+// ════════════════════════════════════════
+function startGame() {
+  s1=0; s2=0; a1=''; a2=''; rope=0; active=true;
+  q1=genQ(selGrade); q2=genQ(selGrade);
+  document.getElementById('qt1').textContent = q1.text;
+  document.getElementById('qt2').textContent = q2.text;
+  ud(1); ud(2); updateScores(); updateRope();
+  document.getElementById('timerCircle').classList.remove('warn');
+  spawnChars();
+  startTimer();
+}
+
+function endGame(winner) {
+  clearInterval(timerInt); active=false;
+  document.getElementById('fs1').textContent=s1;
+  document.getElementById('fs2').textContent=s2;
+  if (winner===1) {
+    document.getElementById('winEmoji').textContent='🎉';
+    document.getElementById('winTitle').textContent="Jamoa 1 g'alaba!";
+    document.getElementById('winSub').textContent=`${s1} : ${s2}`;
+  } else if (winner===2) {
+    document.getElementById('winEmoji').textContent='🏆';
+    document.getElementById('winTitle').textContent="Jamoa 2 g'alaba!";
+    document.getElementById('winSub').textContent=`${s1} : ${s2}`;
+  } else {
+    document.getElementById('winEmoji').textContent='🤝';
+    document.getElementById('winTitle').textContent='Durrang!';
+    document.getElementById('winSub').textContent=`Ikki jamoa ham ${s1} ball`;
+  }
+  document.getElementById('winOverlay').classList.add('show');
+  launchConfetti();
+}
+
+function restart() {
+  document.getElementById('winOverlay').classList.remove('show');
+  startGame();
+}
+
+// ════════════════════════════════════════
+//  CONFETTI
+// ════════════════════════════════════════
+function launchConfetti() {
+  const cols = ['#ef4444','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4'];
+  for (let i=0;i<50;i++) {
+    const c = document.createElement('div');
+    c.className='cnft';
+    c.style.left=ri(0,100)+'vw';
+    c.style.background=cols[ri(0,cols.length-1)];
+    c.style.width=ri(6,12)+'px'; c.style.height=ri(10,18)+'px';
+    c.style.borderRadius=Math.random()>0.5?'50%':'2px';
+    c.style.setProperty('--d',(ri(18,35)/10)+'s');
+    c.style.setProperty('--r',ri(200,800)+'deg');
+    c.style.animationDelay=ri(0,500)+'ms';
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(),4000);
+  }
+}
+
+// ════════════════════════════════════════
+//  KEYBOARD
+//  Top row digits → Team 1, Numpad → Team 2
+// ════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!active) return;
+  const k = e.key;
+  if (/^[0-9]$/.test(k)) {
+    if (e.code && e.code.startsWith('Numpad')) np(2,parseInt(k));
+    else np(1,parseInt(k));
+  }
+  if (e.code==='Enter') sub(1);
+  if (e.code==='NumpadEnter') sub(2);
+  if (e.code==='Backspace') nb(1);
+  if (e.code==='NumpadDecimal' || e.code==='NumpadSubtract') nc(2);
+  if (e.code==='Delete') nb(2);
+});
+
+// ════════════════════════════════════════
+//  SETUP UI
+// ════════════════════════════════════════
+document.querySelectorAll('#gradeButtons .sbtn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#gradeButtons .sbtn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); selGrade=parseInt(b.dataset.grade);
+  });
+});
+document.querySelectorAll('#timeButtons .sbtn').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('#timeButtons .sbtn').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); gameTime=parseInt(b.dataset.time);
+  });
+});
+document.getElementById('startBtn').addEventListener('click', () => {
+  document.getElementById('setupOverlay').style.display='none';
+  startGame();
+});
+</script>
+</body>
+</html>
