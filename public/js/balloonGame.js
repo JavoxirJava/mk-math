@@ -407,7 +407,7 @@
   }
 
   // ─── Result ───
-  function showResult() {
+  async function showResult() {
     clearArena();
     const total = correctCount + wrongCount;
     const pct = total > 0 ? Math.round((correctCount / total) * 100) : 0;
@@ -431,6 +431,45 @@
     document.getElementById("resultTitle").textContent = title;
     document.getElementById("resultSub").textContent = sub;
 
+    // Save to Supabase
+    if (typeof _profile !== 'undefined' && _profile && !_saved) {
+      try {
+        _saved = true;
+        const qInfo = getCurrentQuarterInfo();
+        const rewards = calculateRewards(correctCount, qInfo.isVacation);
+        await saveGameSession({
+          userId: _profile.id,
+          grade: parseInt(grade),
+          topicId: topic,
+          topicName: topicName,
+          mode: 'balloon',
+          difficulty: difficulty,
+          problemsSolved: total,
+          correctCount: correctCount,
+          wrongCount: wrongCount,
+          score: rewards.score,
+          diamonds: rewards.diamonds,
+          goldCoins: rewards.goldCoins,
+          isVacation: qInfo.isVacation,
+          quarter: qInfo.quarter,
+          academicYear: qInfo.academicYear
+        });
+
+        // Show reward info
+        const rewardEl = document.getElementById('rewardInfo');
+        if (qInfo.isVacation) {
+          rewardEl.className = 'mb-4 py-3 px-4 rounded-xl text-center font-bold bg-amber-50 text-amber-700';
+          rewardEl.innerHTML = `&#128176; +${rewards.goldCoins} oltin tanga (ta'til)`;
+        } else {
+          rewardEl.className = 'mb-4 py-3 px-4 rounded-xl text-center font-bold bg-indigo-50 text-indigo-700';
+          rewardEl.innerHTML = `&#128142; +${rewards.diamonds} olmos`;
+        }
+        rewardEl.classList.remove('hidden');
+      } catch (e) {
+        console.error('Save error:', e);
+      }
+    }
+
     document.getElementById("resultOverlay").classList.remove("hidden");
     setTimeout(() => {
       document.getElementById("resultBar").style.width = pct + "%";
@@ -443,8 +482,10 @@
   window.restartGame = function () {
     score = 0; correctCount = 0; wrongCount = 0; currentQ = 0; streak = 0;
     answered = false;
+    if (typeof _saved !== 'undefined') _saved = false;
     scoreDisplay.textContent = "0";
     document.getElementById("resultOverlay").classList.add("hidden");
+    document.getElementById("rewardInfo").classList.add("hidden");
     clearArena();
     loadQuestion();
   };

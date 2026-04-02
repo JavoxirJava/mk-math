@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kirish — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+    .auth-bg {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    }
+    .tab-active {
+      background: white; color: #4f46e5; font-weight: 800;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .tab-inactive {
+      background: transparent; color: rgba(255,255,255,0.7); font-weight: 700;
+    }
+    .grade-btn { transition: all 0.15s; }
+    .grade-btn.selected {
+      outline: 3px solid #6366f1;
+      transform: scale(1.08);
+      box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+    }
+    .shake { animation: shake 0.4s ease; }
+    @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px)} 75%{transform:translateX(6px)} }
+  </style>
+</head>
+<body>
+<div class="auth-bg flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <!-- Logo -->
+    <div class="text-center mb-6">
+      <div class="text-5xl mb-2">&#129518;</div>
+      <h1 class="text-3xl font-black text-white">UzMath Mini</h1>
+      <p class="text-white/70 text-sm mt-1">Matematika o'yinlari platformasi</p>
+    </div>
+
+    <!-- Card -->
+    <div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <!-- Tabs -->
+      <div class="flex bg-indigo-600/20 p-1.5 m-4 rounded-2xl">
+        <button id="tabLogin" onclick="switchTab('login')" class="flex-1 py-2.5 rounded-xl text-sm transition-all tab-active">
+          Kirish
+        </button>
+        <button id="tabRegister" onclick="switchTab('register')" class="flex-1 py-2.5 rounded-xl text-sm transition-all tab-inactive">
+          Ro'yxatdan o'tish
+        </button>
+      </div>
+
+      <!-- Error message -->
+      <div id="errorMsg" class="hidden mx-4 mb-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl px-4 py-2.5 font-semibold"></div>
+
+      <!-- Success message -->
+      <div id="successMsg" class="hidden mx-4 mb-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-2.5 font-semibold"></div>
+
+      <!-- LOGIN FORM -->
+      <form id="loginForm" class="px-6 pb-6" onsubmit="handleLogin(event)">
+        <div class="mb-4">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Foydalanuvchi nomi</label>
+          <input type="text" id="loginUsername" required
+            class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+            placeholder="masalan: ali2024" autocomplete="username" autocapitalize="none">
+        </div>
+        <div class="mb-5">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Parol</label>
+          <input type="password" id="loginPassword" required minlength="6"
+            class="w-full border-2 border-gray-200 rounded-xl px-4 py-3 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+            placeholder="Kamida 6 belgi">
+        </div>
+        <button type="submit" id="loginBtn"
+          class="w-full bg-indigo-600 text-white font-black text-lg py-3.5 rounded-2xl hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          style="box-shadow: 0 4px 0 #3730a3">
+          Kirish
+        </button>
+      </form>
+
+      <!-- REGISTER FORM -->
+      <form id="registerForm" class="px-6 pb-6 hidden" onsubmit="handleRegister(event)">
+        <div class="grid grid-cols-2 gap-3 mb-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Ism</label>
+            <input type="text" id="regFirstName" required
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+              placeholder="Ism">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Familiya</label>
+            <input type="text" id="regLastName" required
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+              placeholder="Familiya">
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Foydalanuvchi nomi</label>
+          <input type="text" id="regUsername" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+"
+            class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+            placeholder="masalan: ali2024" autocomplete="username" autocapitalize="none">
+          <p class="text-xs text-gray-400 mt-1">Faqat harf, raqam va _ (3-20 belgi)</p>
+        </div>
+
+        <div class="mb-3">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Parol</label>
+          <input type="password" id="regPassword" required minlength="6"
+            class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none transition"
+            placeholder="Kamida 6 belgi">
+        </div>
+
+        <!-- Sinf tanlash -->
+        <div class="mb-3">
+          <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Sinf</label>
+          <div class="flex gap-2" id="gradeSelect">
+            <button type="button" onclick="selectGrade(2)" class="grade-btn flex-1 py-2.5 rounded-xl text-sm font-bold bg-emerald-100 text-emerald-700 selected" data-grade="2">
+              2-sinf
+            </button>
+            <button type="button" onclick="selectGrade(3)" class="grade-btn flex-1 py-2.5 rounded-xl text-sm font-bold bg-blue-100 text-blue-700" data-grade="3">
+              3-sinf
+            </button>
+            <button type="button" onclick="selectGrade(4)" class="grade-btn flex-1 py-2.5 rounded-xl text-sm font-bold bg-purple-100 text-purple-700" data-grade="4">
+              4-sinf
+            </button>
+          </div>
+        </div>
+
+        <!-- O'qituvchi checkbox -->
+        <div class="mb-5">
+          <label class="flex items-center gap-2.5 cursor-pointer">
+            <input type="checkbox" id="regIsTeacher" class="w-4 h-4 accent-indigo-600 rounded">
+            <span class="text-sm font-semibold text-gray-600">Men o'qituvchiman</span>
+          </label>
+          <p id="teacherNote" class="hidden text-xs text-amber-600 mt-1 font-semibold">
+            &#9888; O'qituvchi sifatida ro'yxatdan o'tganingizda admin tasdiqlashi kerak bo'ladi
+          </p>
+        </div>
+
+        <button type="submit" id="registerBtn"
+          class="w-full bg-emerald-600 text-white font-black text-lg py-3.5 rounded-2xl hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          style="box-shadow: 0 4px 0 #047857">
+          Ro'yxatdan o'tish
+        </button>
+      </form>
+    </div>
+
+    <p class="text-center text-white/50 text-xs mt-4">UzMath Mini &copy; 2025</p>
+  </div>
+</div>
+
+<script src="js/supabase.js"></script>
+<script>
+  let selectedGrade = 2;
+
+  // Agar login bo'lsa — redirect
+  (async () => {
+    await redirectIfLoggedIn();
+  })();
+
+  // Tab o'zgartirish
+  function switchTab(tab) {
+    const loginForm = document.getElementById('loginForm');
+    const regForm = document.getElementById('registerForm');
+    const tabLogin = document.getElementById('tabLogin');
+    const tabRegister = document.getElementById('tabRegister');
+
+    hideMessages();
+
+    if (tab === 'login') {
+      loginForm.classList.remove('hidden');
+      regForm.classList.add('hidden');
+      tabLogin.className = 'flex-1 py-2.5 rounded-xl text-sm transition-all tab-active';
+      tabRegister.className = 'flex-1 py-2.5 rounded-xl text-sm transition-all tab-inactive';
+    } else {
+      loginForm.classList.add('hidden');
+      regForm.classList.remove('hidden');
+      tabRegister.className = 'flex-1 py-2.5 rounded-xl text-sm transition-all tab-active';
+      tabLogin.className = 'flex-1 py-2.5 rounded-xl text-sm transition-all tab-inactive';
+    }
+  }
+
+  // Sinf tanlash
+  function selectGrade(g) {
+    selectedGrade = g;
+    document.querySelectorAll('.grade-btn').forEach(b => {
+      b.classList.toggle('selected', parseInt(b.dataset.grade) === g);
+    });
+  }
+
+  // O'qituvchi checkbox
+  document.getElementById('regIsTeacher').addEventListener('change', (e) => {
+    document.getElementById('teacherNote').classList.toggle('hidden', !e.target.checked);
+  });
+
+  // Xabarlarni ko'rsatish / yashirish
+  function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('successMsg').classList.add('hidden');
+    el.classList.remove('shake');
+    void el.offsetWidth;
+    el.classList.add('shake');
+  }
+
+  function showSuccess(msg) {
+    const el = document.getElementById('successMsg');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('errorMsg').classList.add('hidden');
+  }
+
+  function hideMessages() {
+    document.getElementById('errorMsg').classList.add('hidden');
+    document.getElementById('successMsg').classList.add('hidden');
+  }
+
+  // Kirish
+  async function handleLogin(e) {
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true;
+    btn.textContent = 'Kirish...';
+    hideMessages();
+
+    try {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      await signIn(username, password);
+
+      const profile = await getProfile();
+      if (profile && profile.role === 'teacher') {
+        window.location.href = '/teacher.html';
+      } else {
+        window.location.href = '/index.html';
+      }
+    } catch (err) {
+      const msg = err.message === 'Invalid login credentials'
+        ? 'Foydalanuvchi nomi yoki parol noto\'g\'ri'
+        : err.message;
+      showError(msg);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Kirish';
+    }
+  }
+
+  // Ro'yxatdan o'tish
+  async function handleRegister(e) {
+    e.preventDefault();
+    const btn = document.getElementById('registerBtn');
+    btn.disabled = true;
+    btn.textContent = 'Kutilmoqda...';
+    hideMessages();
+
+    try {
+      const firstName = document.getElementById('regFirstName').value.trim();
+      const lastName = document.getElementById('regLastName').value.trim();
+      const username = document.getElementById('regUsername').value.trim().toLowerCase();
+      const password = document.getElementById('regPassword').value;
+      const isTeacher = document.getElementById('regIsTeacher').checked;
+
+      // Username validatsiya
+      if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+        showError('Foydalanuvchi nomi faqat harf, raqam va _ bo\'lishi kerak (3-20 belgi)');
+        btn.disabled = false;
+        btn.textContent = 'Ro\'yxatdan o\'tish';
+        return;
+      }
+
+      await signUp(username, password, firstName, lastName, selectedGrade, isTeacher);
+
+      if (isTeacher) {
+        showSuccess('Ro\'yxatdan o\'tdingiz! Admin tasdiqlashini kuting.');
+        switchTab('login');
+      } else {
+        showSuccess('Muvaffaqiyatli! Tizimga kirishingiz mumkin.');
+        switchTab('login');
+        document.getElementById('loginUsername').value = username;
+      }
+    } catch (err) {
+      let msg = err.message;
+      if (msg.includes('already registered') || msg.includes('already been registered')) msg = 'Bu nom allaqachon band';
+      if (msg.includes('duplicate key') || msg.includes('unique')) msg = 'Bu foydalanuvchi nomi allaqachon band';
+      showError(msg);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Ro\'yxatdan o\'tish';
+    }
+  }
+</script>
+</body>
+</html>

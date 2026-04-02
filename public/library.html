@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kutubxona — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+    .book-card { transition: transform 0.15s, box-shadow 0.15s; }
+    .book-card:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .tab-btn { transition: all 0.15s; }
+    .tab-btn.active { background: #4f46e5; color: white; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+
+  <!-- Loading -->
+  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-3">&#128218;</div>
+      <p class="text-gray-400 font-bold">Yuklanmoqda...</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg hover:bg-indigo-700">M</a>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">Kutubxona</h1>
+          <p class="text-xs text-gray-500">Elektron darsliklar va materiallar</p>
+        </div>
+      </div>
+      <nav class="flex items-center gap-2">
+        <a href="index.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">Bosh sahifa</a>
+        <a href="dashboard.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Grade filter -->
+    <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+      <div class="flex items-center gap-2">
+        <span class="text-sm font-bold text-gray-600">Sinf:</span>
+        <button onclick="filterBooks(null)" id="tabAll" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600 active">Barchasi</button>
+        <button onclick="filterBooks(2)" id="tabG2" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600">2-sinf</button>
+        <button onclick="filterBooks(3)" id="tabG3" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600">3-sinf</button>
+        <button onclick="filterBooks(4)" id="tabG4" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600">4-sinf</button>
+      </div>
+      <!-- Upload button (teacher only) -->
+      <button id="uploadBtn" class="hidden px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold text-sm hover:bg-indigo-700 transition" onclick="showUploadModal()">
+        + Kitob yuklash
+      </button>
+    </div>
+
+    <!-- Books grid -->
+    <div id="booksGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"></div>
+
+    <!-- Empty state -->
+    <div id="emptyState" class="hidden text-center py-16 text-gray-400">
+      <div class="text-5xl mb-3">&#128218;</div>
+      <p class="font-bold text-lg">Kitoblar topilmadi</p>
+      <p class="text-sm mt-1">Hali kitob yuklanmagan</p>
+    </div>
+
+    <!-- PDF Viewer Modal -->
+    <div id="pdfModal" class="hidden fixed inset-0 z-50 bg-black/60 flex flex-col">
+      <div class="bg-white px-4 py-3 flex items-center justify-between shadow-md">
+        <h3 id="pdfTitle" class="font-bold text-gray-800 truncate mr-4"></h3>
+        <div class="flex items-center gap-2">
+          <a id="pdfDownload" href="#" download class="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition">Yuklab olish</a>
+          <button onclick="closePdfViewer()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 text-gray-500 font-bold">&times;</button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-hidden">
+        <iframe id="pdfFrame" class="w-full h-full border-0" src=""></iframe>
+      </div>
+    </div>
+
+    <!-- Upload Modal (teacher only) -->
+    <div id="uploadModal" class="hidden fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div class="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full">
+        <div class="flex items-center justify-between mb-6">
+          <h3 class="text-xl font-extrabold text-gray-800">Kitob yuklash</h3>
+          <button onclick="closeUploadModal()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 text-gray-500">&times;</button>
+        </div>
+
+        <form onsubmit="handleUpload(event)">
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Kitob nomi</label>
+            <input type="text" id="bookTitle" required
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none"
+              placeholder="Matematika 2-sinf">
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Tavsif</label>
+            <input type="text" id="bookDesc"
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none"
+              placeholder="Ixtiyoriy tavsif">
+          </div>
+
+          <div class="mb-4">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Sinf</label>
+            <select id="bookGrade" required
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none">
+              <option value="2">2-sinf</option>
+              <option value="3">3-sinf</option>
+              <option value="4">4-sinf</option>
+            </select>
+          </div>
+
+          <div class="mb-6">
+            <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">PDF fayl</label>
+            <input type="file" id="bookFile" accept=".pdf" required
+              class="w-full border-2 border-gray-200 rounded-xl px-4 py-2.5 text-sm font-semibold focus:border-indigo-500 focus:outline-none">
+            <p class="text-xs text-gray-400 mt-1">Faqat PDF, max 50MB</p>
+          </div>
+
+          <!-- Upload progress -->
+          <div id="uploadProgress" class="hidden mb-4">
+            <div class="bg-gray-100 rounded-full h-2.5 overflow-hidden">
+              <div id="uploadBar" class="bg-indigo-500 h-full rounded-full transition-all" style="width: 0%"></div>
+            </div>
+            <p id="uploadStatus" class="text-xs text-gray-500 font-semibold mt-1 text-center">Yuklanmoqda...</p>
+          </div>
+
+          <button type="submit" id="uploadSubmitBtn"
+            class="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition disabled:opacity-50"
+            style="box-shadow: 0 3px 0 #3730a3">
+            Yuklash
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/supabase.js"></script>
+  <script>
+    let _profile = null;
+    let _allBooks = [];
+    let _currentFilter = null;
+
+    (async () => {
+      _profile = await requireAuth();
+      if (!_profile) return;
+
+      // Show upload button for teachers
+      if (_profile.role === 'teacher') {
+        document.getElementById('uploadBtn').classList.remove('hidden');
+      }
+
+      await loadBooks();
+      document.getElementById('loading').style.display = 'none';
+    })();
+
+    async function loadBooks() {
+      _allBooks = await getBooks();
+      renderBooks(_allBooks);
+    }
+
+    function renderBooks(books) {
+      const grid = document.getElementById('booksGrid');
+      const empty = document.getElementById('emptyState');
+      grid.innerHTML = '';
+
+      const filtered = _currentFilter ? books.filter(b => b.grade === _currentFilter) : books;
+
+      if (filtered.length === 0) {
+        grid.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      empty.classList.add('hidden');
+
+      const gradeColors = { 2: 'emerald', 3: 'blue', 4: 'purple' };
+
+      filtered.forEach(book => {
+        const c = gradeColors[book.grade] || 'gray';
+        const sizeKB = book.file_size ? Math.round(book.file_size / 1024) : '?';
+        const sizeMB = sizeKB > 1024 ? (sizeKB / 1024).toFixed(1) + ' MB' : sizeKB + ' KB';
+        const pages = book.page_count ? `${book.page_count} sahifa` : '';
+
+        const card = document.createElement('div');
+        card.className = 'book-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden';
+        card.innerHTML = `
+          <div class="bg-${c}-50 px-5 py-6 text-center">
+            <div class="text-5xl mb-2">&#128214;</div>
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-${c}-100 text-${c}-700">${book.grade}-sinf</span>
+          </div>
+          <div class="p-4">
+            <h3 class="font-bold text-gray-800 mb-1">${book.title}</h3>
+            ${book.description ? `<p class="text-xs text-gray-500 mb-3">${book.description}</p>` : '<div class="mb-3"></div>'}
+            <div class="flex items-center justify-between text-xs text-gray-400 mb-3">
+              <span>${sizeMB}</span>
+              ${pages ? `<span>${pages}</span>` : ''}
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openPdfViewer('${book.file_url}', '${book.title.replace(/'/g, "\\'")}')"
+                class="flex-1 px-3 py-2 bg-indigo-600 text-white rounded-lg font-bold text-sm hover:bg-indigo-700 transition text-center">
+                O'qish
+              </button>
+              <a href="${book.file_url}" download="${book.title}.pdf"
+                class="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg font-bold text-sm hover:bg-gray-200 transition text-center">
+                &#8615;
+              </a>
+              ${_profile.role === 'teacher' ? `
+                <button onclick="handleDelete('${book.id}', '${book.title.replace(/'/g, "\\'")}')"
+                  class="px-3 py-2 bg-red-50 text-red-500 rounded-lg font-bold text-sm hover:bg-red-100 transition">
+                  &#128465;
+                </button>
+              ` : ''}
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterBooks(g) {
+      _currentFilter = g;
+      ['tabAll', 'tabG2', 'tabG3', 'tabG4'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+      });
+      if (g === null) {
+        document.getElementById('tabAll').classList.add('active');
+      } else {
+        document.getElementById(`tabG${g}`).classList.add('active');
+      }
+      renderBooks(_allBooks);
+    }
+
+    // ─── PDF Viewer ───
+    function openPdfViewer(url, title) {
+      document.getElementById('pdfTitle').textContent = title;
+      document.getElementById('pdfDownload').href = url;
+      // Use PDF.js viewer from Mozilla CDN
+      document.getElementById('pdfFrame').src = `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(url)}`;
+      document.getElementById('pdfModal').classList.remove('hidden');
+    }
+
+    function closePdfViewer() {
+      document.getElementById('pdfFrame').src = '';
+      document.getElementById('pdfModal').classList.add('hidden');
+    }
+
+    // ─── Upload (teacher) ───
+    function showUploadModal() {
+      document.getElementById('uploadModal').classList.remove('hidden');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').classList.add('hidden');
+      document.getElementById('uploadProgress').classList.add('hidden');
+    }
+
+    async function handleUpload(e) {
+      e.preventDefault();
+      const btn = document.getElementById('uploadSubmitBtn');
+      btn.disabled = true;
+
+      const title = document.getElementById('bookTitle').value.trim();
+      const description = document.getElementById('bookDesc').value.trim();
+      const grade = parseInt(document.getElementById('bookGrade').value);
+      const fileInput = document.getElementById('bookFile');
+      const file = fileInput.files[0];
+
+      if (!file || !file.name.endsWith('.pdf')) {
+        alert('Faqat PDF fayl yuklang!');
+        btn.disabled = false;
+        return;
+      }
+
+      if (file.size > 50 * 1024 * 1024) {
+        alert('Fayl 50MB dan katta bo\'lmasligi kerak!');
+        btn.disabled = false;
+        return;
+      }
+
+      try {
+        // Show progress
+        document.getElementById('uploadProgress').classList.remove('hidden');
+        document.getElementById('uploadStatus').textContent = 'Presigned URL olinmoqda...';
+        document.getElementById('uploadBar').style.width = '10%';
+
+        // Get presigned URL from Netlify function
+        const fileKey = `books/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+        const presignRes = await fetch('/api/r2-upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileKey, contentType: 'application/pdf' })
+        });
+
+        if (!presignRes.ok) throw new Error('Presigned URL olib bo\'lmadi');
+        const { uploadUrl, publicUrl } = await presignRes.json();
+
+        // Upload to R2
+        document.getElementById('uploadStatus').textContent = 'Fayl yuklanmoqda...';
+        document.getElementById('uploadBar').style.width = '40%';
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/pdf' },
+          body: file
+        });
+
+        if (!uploadRes.ok) throw new Error('R2 ga yuklash xatosi');
+
+        document.getElementById('uploadBar').style.width = '80%';
+        document.getElementById('uploadStatus').textContent = 'Ma\'lumotlar saqlanmoqda...';
+
+        // Save to Supabase
+        await addBook({
+          title,
+          description,
+          grade,
+          fileUrl: publicUrl,
+          fileKey,
+          fileSize: file.size,
+          pageCount: null,
+          uploadedBy: _profile.id
+        });
+
+        document.getElementById('uploadBar').style.width = '100%';
+        document.getElementById('uploadStatus').textContent = 'Muvaffaqiyatli!';
+
+        // Refresh
+        setTimeout(async () => {
+          closeUploadModal();
+          await loadBooks();
+          // Reset form
+          document.getElementById('bookTitle').value = '';
+          document.getElementById('bookDesc').value = '';
+          fileInput.value = '';
+        }, 800);
+
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+        document.getElementById('uploadProgress').classList.add('hidden');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function handleDelete(bookId, title) {
+      if (!confirm(`"${title}" kitobini o'chirmoqchimisiz?`)) return;
+      try {
+        await deleteBook(bookId);
+        await loadBooks();
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
+    }
+
+    // Close modals on backdrop click
+    document.getElementById('uploadModal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeUploadModal();
+    });
+  </script>
+
+</body>
+</html>

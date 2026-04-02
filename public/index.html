@@ -5,8 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UzMath Mini — Matematika o'yini</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Nunito', sans-serif; }
     .grade-card {
@@ -16,24 +17,106 @@
       transform: translateY(-6px);
       box-shadow: 0 12px 30px rgba(0,0,0,0.15);
     }
+    .nav-link {
+      transition: all 0.15s;
+    }
+    .nav-link:hover {
+      background: rgba(99,102,241,0.1);
+    }
+    .vacation-banner {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    }
+    .quarter-banner {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    }
+    [v-cloak] { display: none !important; }
   </style>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
 
-  <!-- Header -->
-  <header class="bg-white/80 backdrop-blur-sm shadow-sm">
-    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+  <!-- Loading -->
+  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-3">&#129518;</div>
+      <p class="text-gray-400 font-bold">Yuklanmoqda...</p>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <header class="bg-white/90 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg">M</div>
-        <h1 class="text-xl font-bold text-gray-800">UzMath Mini</h1>
+        <div class="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">M</div>
+        <h1 class="text-lg font-extrabold text-gray-800 hidden sm:block">UzMath Mini</h1>
       </div>
-      <p class="text-sm text-gray-500 hidden sm:block">Matematika o'yini</p>
+
+      <!-- Nav links -->
+      <nav class="flex items-center gap-1">
+        <a href="dashboard.html" class="nav-link flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600">
+          <span>&#128202;</span> <span class="hidden sm:inline">Dashboard</span>
+        </a>
+        <a href="leaderboard.html" class="nav-link flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600">
+          <span>&#127942;</span> <span class="hidden sm:inline">Reyting</span>
+        </a>
+        <a href="library.html" class="nav-link flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600">
+          <span>&#128218;</span> <span class="hidden sm:inline">Kutubxona</span>
+        </a>
+      </nav>
+
+      <!-- User info -->
+      <div class="flex items-center gap-2">
+        <div id="userInfo" class="text-right hidden">
+          <div class="text-sm font-bold text-gray-800" id="userName"></div>
+          <div class="text-xs text-gray-400" id="userGrade"></div>
+        </div>
+        <button onclick="signOut()" class="ml-1 p-2 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition" title="Chiqish">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+        </button>
+      </div>
     </div>
   </header>
 
+  <!-- Quarter / Vacation banner -->
+  <div id="quarterBanner" class="hidden">
+    <div class="max-w-5xl mx-auto px-4 py-2">
+      <div id="bannerContent" class="rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold">
+        <span id="bannerText"></span>
+        <span id="bannerStats" class="flex items-center gap-3"></span>
+      </div>
+    </div>
+  </div>
+
   <!-- Main -->
-  <main class="max-w-4xl mx-auto px-4 py-12">
-    <div class="text-center mb-12">
+  <main class="max-w-5xl mx-auto px-4 py-8">
+    <!-- Pending teacher message -->
+    <div id="pendingTeacher" class="hidden mb-6 bg-amber-50 border-2 border-amber-200 rounded-2xl p-5 text-center">
+      <div class="text-3xl mb-2">&#9203;</div>
+      <h3 class="text-lg font-bold text-amber-800">Tasdiqlash kutilmoqda</h3>
+      <p class="text-sm text-amber-600 mt-1">Siz o'qituvchi sifatida ro'yxatdan o'tgansiz. Admin tasdiqlaganidan keyin o'qituvchi paneliga kira olasiz.</p>
+    </div>
+
+    <!-- Daily limit info -->
+    <div id="dailyInfo" class="hidden mb-6 bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="text-2xl">&#127919;</div>
+          <div>
+            <div class="text-sm font-bold text-gray-700">Bugungi mashq</div>
+            <div class="text-xs text-gray-400"><span id="todayCount">0</span> / 200 masala</div>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 text-sm font-bold">
+          <span class="flex items-center gap-1" title="Olmos">&#128142; <span id="navDiamonds">0</span></span>
+          <span class="flex items-center gap-1" title="Oltin tanga">&#128176; <span id="navGold">0</span></span>
+        </div>
+      </div>
+      <!-- Progress bar -->
+      <div class="mt-2 bg-gray-100 rounded-full h-2 overflow-hidden">
+        <div id="dailyProgress" class="bg-indigo-500 h-full rounded-full transition-all" style="width: 0%"></div>
+      </div>
+    </div>
+
+    <div class="text-center mb-8">
       <h2 class="text-3xl sm:text-4xl font-extrabold text-gray-800 mb-3">Sinfingizni tanlang</h2>
       <p class="text-gray-500 text-lg">O'zbekiston matematika darsligi asosida</p>
     </div>
@@ -71,14 +154,13 @@
 
     <!-- Multiplayer games section -->
     <div class="mt-12 mb-6 text-center">
-      <h2 class="text-2xl font-extrabold text-gray-700 mb-2">🎮 2 o'yinchili o'yinlar</h2>
+      <h2 class="text-2xl font-extrabold text-gray-700 mb-2">&#127918; 2 o'yinchili o'yinlar</h2>
       <p class="text-gray-400 text-sm mb-6">Do'stingiz bilan raqobatlashing!</p>
       <a href="tugofwar.html"
          class="grade-card inline-flex flex-col items-center bg-white rounded-2xl p-8 shadow-md border-2 border-transparent hover:border-yellow-400 w-64">
-        <div class="w-20 h-20 mb-4 bg-yellow-100 rounded-full flex items-center justify-center text-5xl">🪢</div>
+        <div class="w-20 h-20 mb-4 bg-yellow-100 rounded-full flex items-center justify-center text-5xl">&#129694;</div>
         <h3 class="text-xl font-bold text-gray-800 mb-1">Arqon Tortish</h3>
-        <p class="text-sm text-gray-500">2 jamoa • Matematik musobaqa</p>
-        <span class="mt-3 bg-yellow-400 text-white text-xs font-bold px-3 py-1 rounded-full">YANGI</span>
+        <p class="text-sm text-gray-500">2 jamoa &bull; Matematik musobaqa</p>
       </a>
     </div>
 
@@ -90,5 +172,58 @@
     </div>
   </main>
 
+<script src="js/supabase.js"></script>
+<script src="js/quarters.js"></script>
+<script>
+(async () => {
+  const profile = await requireAuth();
+  if (!profile) return;
+
+  // Pending teacher
+  if (profile.role === 'pending_teacher') {
+    document.getElementById('pendingTeacher').classList.remove('hidden');
+  }
+
+  // User info
+  document.getElementById('userName').textContent = `${profile.first_name} ${profile.last_name}`;
+  document.getElementById('userGrade').textContent = `${profile.grade}-sinf`;
+  document.getElementById('userInfo').classList.remove('hidden');
+
+  // Quarter banner
+  const qInfo = getCurrentQuarterInfo();
+  const banner = document.getElementById('quarterBanner');
+  const bannerContent = document.getElementById('bannerContent');
+  const bannerText = document.getElementById('bannerText');
+  const bannerStats = document.getElementById('bannerStats');
+
+  if (qInfo.isVacation) {
+    bannerContent.className = 'vacation-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
+    bannerText.innerHTML = `&#127942; ${qInfo.label} — ballar oltin tangaga almashadi`;
+  } else {
+    bannerContent.className = 'quarter-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
+    const remaining = getQuarterRemainingDays();
+    bannerText.innerHTML = `&#128142; ${qInfo.label} &bull; ${remaining} kun qoldi`;
+  }
+  banner.classList.remove('hidden');
+
+  // Stats
+  const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
+  bannerStats.innerHTML = `
+    <span>&#128142; ${stats.diamonds}</span>
+    <span>&#128176; ${stats.goldCoins}</span>
+  `;
+
+  // Daily info
+  const todayCount = await getTodayProblemsCount(profile.id);
+  document.getElementById('todayCount').textContent = todayCount;
+  document.getElementById('dailyProgress').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
+  document.getElementById('navDiamonds').textContent = stats.diamonds;
+  document.getElementById('navGold').textContent = stats.goldCoins;
+  document.getElementById('dailyInfo').classList.remove('hidden');
+
+  // Hide loading
+  document.getElementById('loading').style.display = 'none';
+})();
+</script>
 </body>
 </html>

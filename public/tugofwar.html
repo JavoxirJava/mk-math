@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Arqon Tortish — UzMath Mini</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Nunito', sans-serif; overflow: hidden; user-select: none; margin: 0; }
@@ -804,6 +805,11 @@ document.getElementById('startBtn').addEventListener('click', () => {
   document.getElementById('setupOverlay').style.display='none';
   startGame();
 });
+</script>
+<script src="js/supabase.js"></script>
+<script>
+  // Auth guard only (no score saving for 2-player game)
+  (async () => { await requireAuth(); })();
 </script>
 </body>
 </html>

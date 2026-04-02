@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Mavzular — UzMath Mini</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
     body { font-family: 'Nunito', sans-serif; }
     .topic-card { transition: transform 0.15s, box-shadow 0.15s; }
@@ -120,11 +121,30 @@
 
   </main>
 
+  <script src="js/supabase.js"></script>
+  <script src="js/quarters.js"></script>
   <script>
+    let _profile = null;
+    let _todayCount = 0;
+
     const params = new URLSearchParams(window.location.search);
     const grade = params.get("grade") || "2";
     let selectedTopic = null;
     let difficulty = 1;
+
+    // Auth guard + kunlik cheklov
+    (async () => {
+      _profile = await requireAuth();
+      if (!_profile) return;
+
+      _todayCount = await getTodayProblemsCount(_profile.id);
+      if (_todayCount >= 200) {
+        const banner = document.createElement('div');
+        banner.className = 'max-w-4xl mx-auto px-4 mt-4';
+        banner.innerHTML = '<div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 text-center text-sm font-bold text-amber-700">&#9888; Bugungi limit tugadi (200/200 masala). Ertaga davom eting!</div>';
+        document.querySelector('main').prepend(banner);
+      }
+    })();
 
     const gradeColors = { "2": "emerald", "3": "blue", "4": "purple" };
     const color = gradeColors[grade] || "blue";
@@ -182,6 +202,10 @@
     function startGame(mode) {
       if (!selectedTopic) {
         alert("Avval mavzuni tanlang!");
+        return;
+      }
+      if (_todayCount >= 200) {
+        alert("Bugungi limit tugadi (200/200 masala). Ertaga davom eting!");
         return;
       }
       const params = new URLSearchParams({

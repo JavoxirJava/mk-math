@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sharlar o'yini — UzMath Mini</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     body {
@@ -245,6 +246,8 @@
           <div class="text-xs text-gray-400">Noto'g'ri</div>
         </div>
       </div>
+      <!-- Reward info (filled by JS) -->
+      <div id="rewardInfo" class="hidden mb-4 py-3 px-4 rounded-xl text-center font-bold"></div>
       <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
         <div id="resultBar" class="h-2.5 rounded-full bg-gradient-to-r from-emerald-400 to-emerald-600" style="width:0%;transition:width 0.8s"></div>
       </div>
@@ -255,6 +258,16 @@
     </div>
   </div>
 
+  <script src="js/supabase.js"></script>
+  <script src="js/quarters.js"></script>
+  <script>
+    // Auth guard + profile for saving
+    let _profile = null;
+    let _saved = false;
+    (async () => {
+      _profile = await requireAuth();
+    })();
+  </script>
   <script src="js/balloonGame.js"></script>
 </body>
 </html>

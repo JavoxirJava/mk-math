@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reyting — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+    .tab-btn { transition: all 0.15s; }
+    .tab-btn.active { background: #4f46e5; color: white; box-shadow: 0 2px 8px rgba(79,70,229,0.3); }
+    .rank-row { transition: background 0.15s; }
+    .rank-row:hover { background: #f8fafc; }
+    .podium { animation: podiumIn 0.5s ease-out; }
+    @keyframes podiumIn { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+
+  <!-- Loading -->
+  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-3">&#127942;</div>
+      <p class="text-gray-400 font-bold">Yuklanmoqda...</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+    <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg hover:bg-indigo-700">M</a>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">Reyting jadvali</h1>
+          <p id="quarterLabel" class="text-xs text-gray-500"></p>
+        </div>
+      </div>
+      <nav class="flex items-center gap-2">
+        <a href="index.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">Bosh sahifa</a>
+        <a href="dashboard.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">Dashboard</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Grade tabs -->
+    <div class="flex justify-center gap-2 mb-8">
+      <button onclick="switchGrade(2)" id="tab2" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
+        2-sinf
+      </button>
+      <button onclick="switchGrade(3)" id="tab3" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
+        3-sinf
+      </button>
+      <button onclick="switchGrade(4)" id="tab4" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
+        4-sinf
+      </button>
+    </div>
+
+    <!-- Podium (top 3) -->
+    <div id="podium" class="hidden mb-8">
+      <div class="flex items-end justify-center gap-3 sm:gap-6">
+        <!-- 2nd place -->
+        <div id="pod2" class="podium text-center" style="animation-delay: 0.1s">
+          <div class="w-16 h-16 sm:w-20 sm:h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-2">
+            <span class="text-2xl sm:text-3xl font-extrabold text-gray-500">2</span>
+          </div>
+          <div class="bg-gray-200 rounded-t-xl pt-4 pb-3 px-3 w-24 sm:w-28" style="height: 100px">
+            <div id="pod2Name" class="text-xs sm:text-sm font-bold text-gray-700 truncate"></div>
+            <div id="pod2Score" class="text-sm font-extrabold text-gray-600 mt-1"></div>
+          </div>
+        </div>
+        <!-- 1st place -->
+        <div id="pod1" class="podium text-center">
+          <div class="w-20 h-20 sm:w-24 sm:h-24 mx-auto bg-amber-100 rounded-full flex items-center justify-center mb-2 ring-4 ring-amber-300">
+            <span class="text-3xl sm:text-4xl">&#128081;</span>
+          </div>
+          <div class="bg-amber-100 rounded-t-xl pt-4 pb-3 px-3 w-28 sm:w-32" style="height: 130px">
+            <div id="pod1Name" class="text-sm sm:text-base font-extrabold text-amber-800 truncate"></div>
+            <div id="pod1Score" class="text-lg font-extrabold text-amber-600 mt-1"></div>
+          </div>
+        </div>
+        <!-- 3rd place -->
+        <div id="pod3" class="podium text-center" style="animation-delay: 0.2s">
+          <div class="w-14 h-14 sm:w-18 sm:h-18 mx-auto bg-orange-50 rounded-full flex items-center justify-center mb-2">
+            <span class="text-xl sm:text-2xl font-extrabold text-orange-400">3</span>
+          </div>
+          <div class="bg-orange-50 rounded-t-xl pt-4 pb-3 px-3 w-22 sm:w-26" style="height: 80px">
+            <div id="pod3Name" class="text-xs sm:text-sm font-bold text-orange-700 truncate"></div>
+            <div id="pod3Score" class="text-sm font-extrabold text-orange-500 mt-1"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- My rank -->
+    <div id="myRank" class="hidden bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-4 mb-6">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold" id="myRankNum">#</div>
+          <div>
+            <div class="font-bold text-gray-800" id="myRankName">Siz</div>
+            <div class="text-xs text-gray-500">Sizning o'rningiz</div>
+          </div>
+        </div>
+        <div class="text-right">
+          <div class="font-extrabold text-indigo-600" id="myRankDiamonds">0 &#128142;</div>
+          <div class="text-xs text-gray-400" id="myRankScore">0 ball</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full table -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div id="emptyState" class="hidden text-center py-12 text-gray-400">
+        <div class="text-5xl mb-3">&#128203;</div>
+        <p class="font-bold text-lg">Hali ma'lumot yo'q</p>
+        <p class="text-sm mt-1">Bu sinf uchun hali hech kim o'ynagan emas</p>
+      </div>
+      <table id="rankTable" class="hidden w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-100 bg-gray-50/50">
+            <th class="text-left py-3 px-4 text-gray-400 font-semibold w-12">#</th>
+            <th class="text-left py-3 px-4 text-gray-400 font-semibold">O'quvchi</th>
+            <th class="text-center py-3 px-4 text-gray-400 font-semibold">Masalalar</th>
+            <th class="text-center py-3 px-4 text-gray-400 font-semibold">&#128142; Olmos</th>
+            <th class="text-right py-3 px-4 text-gray-400 font-semibold">&#11088; Ball</th>
+          </tr>
+        </thead>
+        <tbody id="rankBody"></tbody>
+      </table>
+    </div>
+
+  </main>
+
+  <script src="js/supabase.js"></script>
+  <script src="js/quarters.js"></script>
+  <script>
+    let _profile = null;
+    let _currentGrade = 2;
+
+    (async () => {
+      _profile = await requireAuth();
+      if (!_profile) return;
+
+      const qInfo = getCurrentQuarterInfo();
+      if (qInfo.isVacation) {
+        document.getElementById('quarterLabel').textContent = `${qInfo.label} — olmoslar joriy chorakdan`;
+      } else {
+        document.getElementById('quarterLabel').textContent = qInfo.label;
+      }
+
+      // Default to student's own grade
+      _currentGrade = _profile.grade;
+      document.getElementById(`tab${_currentGrade}`).classList.add('active');
+
+      await loadLeaderboard(_currentGrade);
+      document.getElementById('loading').style.display = 'none';
+    })();
+
+    async function switchGrade(g) {
+      _currentGrade = g;
+      [2, 3, 4].forEach(x => {
+        document.getElementById(`tab${x}`).classList.toggle('active', x === g);
+      });
+      await loadLeaderboard(g);
+    }
+
+    async function loadLeaderboard(grade) {
+      const qInfo = getCurrentQuarterInfo();
+      const leaders = await getLeaderboard(grade, qInfo.quarter, qInfo.academicYear);
+
+      const podium = document.getElementById('podium');
+      const emptyState = document.getElementById('emptyState');
+      const rankTable = document.getElementById('rankTable');
+      const myRank = document.getElementById('myRank');
+      const rankBody = document.getElementById('rankBody');
+
+      // Reset
+      podium.classList.add('hidden');
+      emptyState.classList.add('hidden');
+      rankTable.classList.add('hidden');
+      myRank.classList.add('hidden');
+      rankBody.innerHTML = '';
+
+      if (leaders.length === 0) {
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      // Podium (top 3)
+      if (leaders.length >= 1) {
+        podium.classList.remove('hidden');
+        fillPod(1, leaders[0]);
+        if (leaders.length >= 2) fillPod(2, leaders[1]);
+        else hidePod(2);
+        if (leaders.length >= 3) fillPod(3, leaders[2]);
+        else hidePod(3);
+      }
+
+      // My rank
+      const myIdx = leaders.findIndex(l => l.user_id === _profile.id);
+      if (myIdx >= 0) {
+        myRank.classList.remove('hidden');
+        document.getElementById('myRankNum').textContent = `#${myIdx + 1}`;
+        document.getElementById('myRankName').textContent = `${leaders[myIdx].first_name} ${leaders[myIdx].last_name}`;
+        document.getElementById('myRankDiamonds').innerHTML = `${leaders[myIdx].total_diamonds} &#128142;`;
+        document.getElementById('myRankScore').textContent = `${formatNumber(leaders[myIdx].total_score)} ball`;
+      }
+
+      // Full table
+      rankTable.classList.remove('hidden');
+      leaders.forEach((l, i) => {
+        const isMe = l.user_id === _profile.id;
+        const tr = document.createElement('tr');
+        tr.className = `rank-row border-b border-gray-50 ${isMe ? 'bg-indigo-50' : ''}`;
+
+        let rankIcon;
+        if (i === 0) rankIcon = '&#129351;';
+        else if (i === 1) rankIcon = '&#129352;';
+        else if (i === 2) rankIcon = '&#129353;';
+        else rankIcon = `<span class="text-gray-400 font-bold">${i + 1}</span>`;
+
+        tr.innerHTML = `
+          <td class="py-3 px-4">${rankIcon}</td>
+          <td class="py-3 px-4">
+            <span class="font-bold ${isMe ? 'text-indigo-700' : 'text-gray-800'}">${l.first_name} ${l.last_name}</span>
+            ${isMe ? '<span class="ml-1 text-xs bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-bold">Siz</span>' : ''}
+          </td>
+          <td class="py-3 px-4 text-center text-gray-600 font-semibold">${formatNumber(l.total_problems)}</td>
+          <td class="py-3 px-4 text-center font-extrabold text-indigo-600">${l.total_diamonds}</td>
+          <td class="py-3 px-4 text-right font-bold text-gray-600">${formatNumber(l.total_score)}</td>
+        `;
+        rankBody.appendChild(tr);
+      });
+    }
+
+    function fillPod(n, data) {
+      document.getElementById(`pod${n}`).style.display = '';
+      document.getElementById(`pod${n}Name`).textContent = `${data.first_name} ${data.last_name}`;
+      document.getElementById(`pod${n}Score`).innerHTML = `${data.total_diamonds} &#128142;`;
+    }
+
+    function hidePod(n) {
+      document.getElementById(`pod${n}`).style.display = 'none';
+    }
+  </script>
+
+</body>
+</html>

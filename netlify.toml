@@ -11,3 +11,8 @@
   from = "/api/generate"
   to = "/.netlify/functions/generate"
   status = 200
+
+[[redirects]]
+  from = "/api/r2-upload"
+  to = "/.netlify/functions/r2-upload"
+  status = 200
