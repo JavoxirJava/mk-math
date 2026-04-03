@@ -357,11 +357,7 @@
 
       // Show reward info
       let rewardText = sub;
-      if (qInfo.isVacation) {
-        rewardText += ` | \u{1FA99} +${rewards.goldCoins} oltin tanga`;
-      } else {
-        rewardText += ` | \uD83D\uDC8E +${rewards.diamonds} olmos`;
-      }
+      rewardText += ` | \uD83D\uDC8E +${rewards.diamonds} olmos`;
       document.getElementById("resultSub").textContent = rewardText;
 
       // Animate progress bar

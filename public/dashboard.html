@@ -56,30 +56,18 @@
     </div>
 
     <!-- Stats cards -->
-    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-      <!-- Ball -->
-      <div class="stat-card bg-white rounded-2xl p-5 shadow-sm text-center">
-        <div class="text-3xl mb-1">&#11088;</div>
-        <div class="text-2xl font-extrabold text-gray-800" id="statScore">0</div>
-        <div class="text-xs text-gray-400 font-semibold">Ball</div>
-      </div>
+    <div class="grid grid-cols-2 gap-4 mb-8">
       <!-- Olmos -->
       <div class="stat-card bg-white rounded-2xl p-5 shadow-sm text-center">
         <div class="text-3xl mb-1">&#128142;</div>
         <div class="text-2xl font-extrabold text-indigo-600" id="statDiamonds">0</div>
         <div class="text-xs text-gray-400 font-semibold">Olmos (chorak)</div>
       </div>
-      <!-- Oltin tanga -->
-      <div class="stat-card bg-white rounded-2xl p-5 shadow-sm text-center">
-        <div class="text-3xl mb-1">&#128176;</div>
-        <div class="text-2xl font-extrabold text-amber-600" id="statGold">0</div>
-        <div class="text-xs text-gray-400 font-semibold">Oltin tanga (yillik)</div>
-      </div>
       <!-- Masalalar -->
       <div class="stat-card bg-white rounded-2xl p-5 shadow-sm text-center">
         <div class="text-3xl mb-1">&#9989;</div>
         <div class="text-2xl font-extrabold text-emerald-600" id="statProblems">0</div>
-        <div class="text-xs text-gray-400 font-semibold">Yechilgan masalalar</div>
+        <div class="text-xs text-gray-400 font-semibold">Yechilgan / To'g'ri</div>
       </div>
     </div>
 
@@ -168,13 +156,10 @@
 
       // Quarter stats
       const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
-      document.getElementById('statScore').textContent = formatNumber(stats.score);
       document.getElementById('statDiamonds').textContent = stats.diamonds;
-      document.getElementById('statProblems').textContent = formatNumber(stats.problemsSolved || 0);
-
-      // Yearly gold coins
-      const goldCoins = await getYearlyGoldCoins(profile.id, qInfo.academicYear);
-      document.getElementById('statGold').textContent = goldCoins;
+      const solved = stats.problemsSolved || 0;
+      const correct = stats.correct || 0;
+      document.getElementById('statProblems').textContent = `${formatNumber(solved)} / ${formatNumber(correct)}`;
 
       // Today's stats
       const todayCount = await getTodayProblemsCount(profile.id);

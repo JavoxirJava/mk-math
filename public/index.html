@@ -107,7 +107,6 @@
         </div>
         <div class="flex items-center gap-4 text-sm font-bold">
           <span class="flex items-center gap-1" title="Olmos">&#128142; <span id="navDiamonds">0</span></span>
-          <span class="flex items-center gap-1" title="Oltin tanga">&#128176; <span id="navGold">0</span></span>
         </div>
       </div>
       <!-- Progress bar -->
@@ -208,17 +207,13 @@
 
   // Stats
   const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
-  bannerStats.innerHTML = `
-    <span>&#128142; ${stats.diamonds}</span>
-    <span>&#128176; ${stats.goldCoins}</span>
-  `;
+  bannerStats.innerHTML = `<span>&#128142; ${stats.diamonds}</span>`;
 
   // Daily info
   const todayCount = await getTodayProblemsCount(profile.id);
   document.getElementById('todayCount').textContent = todayCount;
   document.getElementById('dailyProgress').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
   document.getElementById('navDiamonds').textContent = stats.diamonds;
-  document.getElementById('navGold').textContent = stats.goldCoins;
   document.getElementById('dailyInfo').classList.remove('hidden');
 
   // Hide loading

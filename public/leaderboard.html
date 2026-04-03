@@ -46,17 +46,9 @@
 
   <main class="max-w-4xl mx-auto px-4 py-8">
 
-    <!-- Grade tabs -->
-    <div class="flex justify-center gap-2 mb-8">
-      <button onclick="switchGrade(2)" id="tab2" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
-        2-sinf
-      </button>
-      <button onclick="switchGrade(3)" id="tab3" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
-        3-sinf
-      </button>
-      <button onclick="switchGrade(4)" id="tab4" class="tab-btn px-6 py-2.5 rounded-xl font-bold text-sm bg-gray-100 text-gray-600">
-        4-sinf
-      </button>
+    <!-- Grade label -->
+    <div class="flex justify-center mb-8">
+      <div id="gradeLabel" class="px-6 py-2.5 rounded-xl font-bold text-sm bg-indigo-600 text-white"></div>
     </div>
 
     <!-- Podium (top 3) -->
@@ -139,7 +131,6 @@
   <script src="js/quarters.js"></script>
   <script>
     let _profile = null;
-    let _currentGrade = 2;
 
     (async () => {
       _profile = await requireAuth();
@@ -152,21 +143,11 @@
         document.getElementById('quarterLabel').textContent = qInfo.label;
       }
 
-      // Default to student's own grade
-      _currentGrade = _profile.grade;
-      document.getElementById(`tab${_currentGrade}`).classList.add('active');
-
-      await loadLeaderboard(_currentGrade);
+      // Faqat o'z sinfi
+      document.getElementById('gradeLabel').textContent = `${_profile.grade}-sinf`;
+      await loadLeaderboard(_profile.grade);
       document.getElementById('loading').style.display = 'none';
     })();
-
-    async function switchGrade(g) {
-      _currentGrade = g;
-      [2, 3, 4].forEach(x => {
-        document.getElementById(`tab${x}`).classList.toggle('active', x === g);
-      });
-      await loadLeaderboard(g);
-    }
 
     async function loadLeaderboard(grade) {
       const qInfo = getCurrentQuarterInfo();
