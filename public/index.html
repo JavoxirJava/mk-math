@@ -188,6 +188,18 @@
   document.getElementById('userGrade').textContent = `${profile.grade}-sinf`;
   document.getElementById('userInfo').classList.remove('hidden');
 
+  // Admin link in navbar
+  if (profile.role === 'admin') {
+    const nav = document.querySelector('header nav');
+    if (nav) {
+      const adminLink = document.createElement('a');
+      adminLink.href = 'admin.html';
+      adminLink.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 hover:text-indigo-600';
+      adminLink.innerHTML = '&#9881; Admin';
+      nav.prepend(adminLink);
+    }
+  }
+
   // Quarter banner
   const qInfo = getCurrentQuarterInfo();
   const banner = document.getElementById('quarterBanner');

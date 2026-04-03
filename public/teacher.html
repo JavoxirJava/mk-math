@@ -160,7 +160,7 @@
       if (!profile) return;
 
       // Teacher check
-      if (profile.role !== 'teacher') {
+      if (profile.role !== 'teacher' && profile.role !== 'admin') {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('accessDenied').classList.remove('hidden');
         return;

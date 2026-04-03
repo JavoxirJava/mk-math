@@ -100,7 +100,9 @@ async function redirectIfLoggedIn() {
   if (session) {
     const profile = await getProfile();
     if (profile) {
-      if (profile.role === 'teacher') {
+      if (profile.role === 'admin') {
+        window.location.href = '/admin.html';
+      } else if (profile.role === 'teacher') {
         window.location.href = '/teacher.html';
       } else {
         window.location.href = '/index.html';
@@ -324,6 +326,50 @@ async function getStudentStats(userId) {
 
   if (error) return [];
   return data;
+}
+
+// ════════════════════════════════════════
+//  ADMIN HELPERS
+// ════════════════════════════════════════
+
+/** Tasdiqlash kutayotgan o'qituvchilar */
+async function getPendingTeachers() {
+  const { data, error } = await _sb
+    .from('profiles')
+    .select('*')
+    .eq('role', 'pending_teacher')
+    .order('last_name');
+  if (error) return [];
+  return data;
+}
+
+/** Barcha tasdiqlangan o'qituvchilar */
+async function getAllTeachers() {
+  const { data, error } = await _sb
+    .from('profiles')
+    .select('*')
+    .eq('role', 'teacher')
+    .order('last_name');
+  if (error) return [];
+  return data;
+}
+
+/** O'qituvchini tasdiqlash */
+async function approveTeacher(userId) {
+  const { error } = await _sb
+    .from('profiles')
+    .update({ role: 'teacher' })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/** O'qituvchi so'rovini rad etish (student ga qaytarish) */
+async function rejectTeacher(userId) {
+  const { error } = await _sb
+    .from('profiles')
+    .update({ role: 'student' })
+    .eq('id', userId);
+  if (error) throw error;
 }
 
 // ════════════════════════════════════════

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin paneli — UzMath Mini</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Nunito', sans-serif; }
+    .tab-btn { transition: all 0.15s; }
+    .tab-btn.active { background: #4f46e5; color: white; }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+
+  <!-- Loading -->
+  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-3">&#9881;</div>
+      <p class="text-gray-400 font-bold">Yuklanmoqda...</p>
+    </div>
+  </div>
+
+  <!-- Access denied -->
+  <div id="accessDenied" class="hidden fixed inset-0 bg-white z-50 flex items-center justify-center">
+    <div class="text-center">
+      <div class="text-5xl mb-3">&#128683;</div>
+      <h2 class="text-2xl font-extrabold text-gray-800 mb-2">Ruxsat yo'q</h2>
+      <p class="text-gray-500 mb-4">Bu sahifa faqat admin uchun</p>
+      <a href="index.html" class="px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition inline-block">Bosh sahifaga</a>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="bg-white/80 backdrop-blur-sm shadow-sm sticky top-0 z-40">
+    <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a href="index.html" class="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white font-bold text-lg hover:bg-indigo-700">M</a>
+        <div>
+          <h1 class="text-lg font-bold text-gray-800">Admin paneli</h1>
+          <p id="adminName" class="text-xs text-gray-500"></p>
+        </div>
+      </div>
+      <nav class="flex items-center gap-2">
+        <a href="teacher.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">O'qituvchi</a>
+        <a href="library.html" class="text-sm text-gray-500 hover:text-indigo-600 font-semibold px-2 py-1 rounded-lg">Kutubxona</a>
+        <button onclick="signOut()" class="text-sm text-red-500 hover:text-red-700 font-semibold px-2 py-1 rounded-lg">Chiqish</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Summary cards -->
+    <div class="grid grid-cols-3 gap-4 mb-8">
+      <div class="bg-white rounded-2xl p-5 shadow-sm text-center">
+        <div class="text-3xl mb-1">&#9203;</div>
+        <div class="text-2xl font-extrabold text-amber-600" id="pendingCount">0</div>
+        <div class="text-xs text-gray-400 font-semibold">Kutilayotgan so'rovlar</div>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm text-center">
+        <div class="text-3xl mb-1">&#128218;</div>
+        <div class="text-2xl font-extrabold text-emerald-600" id="teacherCount">0</div>
+        <div class="text-xs text-gray-400 font-semibold">O'qituvchilar</div>
+      </div>
+      <div class="bg-white rounded-2xl p-5 shadow-sm text-center">
+        <div class="text-3xl mb-1">&#128100;</div>
+        <div class="text-2xl font-extrabold text-indigo-600" id="studentCount">0</div>
+        <div class="text-xs text-gray-400 font-semibold">O'quvchilar</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex items-center gap-2 mb-6">
+      <button onclick="switchTab('pending')" id="tabPending" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600 active">Kutilayotganlar</button>
+      <button onclick="switchTab('teachers')" id="tabTeachers" class="tab-btn px-4 py-1.5 rounded-lg font-bold text-sm bg-gray-100 text-gray-600">O'qituvchilar</button>
+    </div>
+
+    <!-- Pending teachers section -->
+    <div id="pendingSection">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="emptyPending" class="hidden text-center py-12 text-gray-400">
+          <div class="text-5xl mb-3">&#9989;</div>
+          <p class="font-bold">Kutilayotgan so'rov yo'q</p>
+        </div>
+        <table id="pendingTable" class="hidden w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 bg-gray-50/50">
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">#</th>
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">Ism Familiya</th>
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">Username</th>
+              <th class="text-center py-3 px-4 text-gray-400 font-semibold">Sinf</th>
+              <th class="text-right py-3 px-4 text-gray-400 font-semibold">Amallar</th>
+            </tr>
+          </thead>
+          <tbody id="pendingBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Teachers section -->
+    <div id="teachersSection" class="hidden">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div id="emptyTeachers" class="hidden text-center py-12 text-gray-400">
+          <div class="text-5xl mb-3">&#128218;</div>
+          <p class="font-bold">Hali o'qituvchi yo'q</p>
+        </div>
+        <table id="teachersTable" class="hidden w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-100 bg-gray-50/50">
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">#</th>
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">Ism Familiya</th>
+              <th class="text-left py-3 px-4 text-gray-400 font-semibold">Username</th>
+              <th class="text-center py-3 px-4 text-gray-400 font-semibold">Sinf</th>
+            </tr>
+          </thead>
+          <tbody id="teachersBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+
+  <script src="js/supabase.js"></script>
+  <script>
+    let _pendingTeachers = [];
+    let _approvedTeachers = [];
+    let _activeTab = 'pending';
+
+    (async () => {
+      const profile = await requireAuth();
+      if (!profile) return;
+
+      if (profile.role !== 'admin') {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('accessDenied').classList.remove('hidden');
+        return;
+      }
+
+      document.getElementById('adminName').textContent = `${profile.first_name} ${profile.last_name}`;
+
+      await loadData();
+      document.getElementById('loading').style.display = 'none';
+    })();
+
+    async function loadData() {
+      _pendingTeachers = await getPendingTeachers();
+      _approvedTeachers = await getAllTeachers();
+      const students = await getAllStudents();
+
+      document.getElementById('pendingCount').textContent = _pendingTeachers.length;
+      document.getElementById('teacherCount').textContent = _approvedTeachers.length;
+      document.getElementById('studentCount').textContent = students.length;
+
+      renderCurrentTab();
+    }
+
+    function switchTab(tab) {
+      _activeTab = tab;
+      document.getElementById('tabPending').classList.toggle('active', tab === 'pending');
+      document.getElementById('tabTeachers').classList.toggle('active', tab === 'teachers');
+      document.getElementById('pendingSection').classList.toggle('hidden', tab !== 'pending');
+      document.getElementById('teachersSection').classList.toggle('hidden', tab !== 'teachers');
+      renderCurrentTab();
+    }
+
+    function renderCurrentTab() {
+      if (_activeTab === 'pending') renderPending();
+      else renderTeachers();
+    }
+
+    function renderPending() {
+      const tbody = document.getElementById('pendingBody');
+      const table = document.getElementById('pendingTable');
+      const empty = document.getElementById('emptyPending');
+      tbody.innerHTML = '';
+
+      if (_pendingTeachers.length === 0) {
+        table.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      table.classList.remove('hidden');
+      empty.classList.add('hidden');
+
+      _pendingTeachers.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-50';
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-gray-400 font-semibold">${i + 1}</td>
+          <td class="py-3 px-4 font-bold text-gray-800">${t.first_name} ${t.last_name}</td>
+          <td class="py-3 px-4 text-gray-500">${t.username}</td>
+          <td class="py-3 px-4 text-center">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">${t.grade}-sinf</span>
+          </td>
+          <td class="py-3 px-4 text-right">
+            <button onclick="handleApprove('${t.id}')" class="px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg font-bold text-xs hover:bg-emerald-200 transition mr-1">Tasdiqlash</button>
+            <button onclick="handleReject('${t.id}')" class="px-3 py-1.5 bg-rose-100 text-rose-600 rounded-lg font-bold text-xs hover:bg-rose-200 transition">Rad etish</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderTeachers() {
+      const tbody = document.getElementById('teachersBody');
+      const table = document.getElementById('teachersTable');
+      const empty = document.getElementById('emptyTeachers');
+      tbody.innerHTML = '';
+
+      if (_approvedTeachers.length === 0) {
+        table.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      table.classList.remove('hidden');
+      empty.classList.add('hidden');
+
+      _approvedTeachers.forEach((t, i) => {
+        const tr = document.createElement('tr');
+        tr.className = 'border-b border-gray-50';
+        tr.innerHTML = `
+          <td class="py-3 px-4 text-gray-400 font-semibold">${i + 1}</td>
+          <td class="py-3 px-4 font-bold text-gray-800">${t.first_name} ${t.last_name}</td>
+          <td class="py-3 px-4 text-gray-500">${t.username}</td>
+          <td class="py-3 px-4 text-center">
+            <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">${t.grade}-sinf</span>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    async function handleApprove(userId) {
+      if (!confirm("Bu o'qituvchini tasdiqlaysizmi?")) return;
+      try {
+        await approveTeacher(userId);
+        await loadData();
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
+    }
+
+    async function handleReject(userId) {
+      if (!confirm("Bu so'rovni rad etasizmi? Foydalanuvchi oddiy o'quvchi bo'lib qoladi.")) return;
+      try {
+        await rejectTeacher(userId);
+        await loadData();
+      } catch (err) {
+        alert('Xatolik: ' + err.message);
+      }
+    }
+  </script>
+
+</body>
+</html>
