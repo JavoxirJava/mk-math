@@ -81,7 +81,7 @@
           <p class="text-sm text-gray-500">Javob to'g'rimi?</p>
         </button>
 
-        <button onclick="startGame('comparison')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-cyan-400">
+        <button id="comparisonBtn" onclick="startGame('comparison')" class="mode-btn bg-white rounded-xl p-5 text-left shadow-sm border-2 border-transparent hover:border-cyan-400">
           <div class="flex items-center gap-3 mb-2">
             <span class="text-2xl">&#9878;</span>
             <h3 class="font-bold text-gray-800">Taqqoslash</h3>
@@ -169,6 +169,11 @@
         });
       });
 
+    // 4-sinf da Taqqoslash faqat shu topiclarda ko'rinadi
+    const comparisonAllowed = {
+      "4": ["million_numeration", "fractions_grade4"]
+    };
+
     function selectTopic(topic) {
       selectedTopic = topic;
       // Highlight selected
@@ -180,6 +185,16 @@
       if (active) {
         active.classList.add(`border-${color}-400`, "bg-indigo-50");
         active.classList.remove("border-transparent");
+      }
+      // Show/hide Taqqoslash tugmasi
+      const compBtn = document.getElementById("comparisonBtn");
+      if (compBtn) {
+        const allowed = comparisonAllowed[grade];
+        if (allowed && !allowed.includes(topic.id)) {
+          compBtn.style.display = "none";
+        } else {
+          compBtn.style.display = "";
+        }
       }
       // Show mode section
       document.getElementById("modeSection").classList.remove("hidden");
