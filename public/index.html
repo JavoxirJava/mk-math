@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UzMath Mini — Matematika o'yini</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -35,10 +35,10 @@
 <body class="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
 
   <!-- Loading -->
-  <div id="loading" class="fixed inset-0 bg-white z-50 flex items-center justify-center">
-    <div class="text-center">
-      <div class="text-5xl mb-3">&#129518;</div>
-      <p class="text-gray-400 font-bold">Yuklanmoqda...</p>
+  <div id="loading" style="position:fixed;inset:0;background:white;z-index:50;display:flex;align-items:center;justify-content:center">
+    <div style="text-align:center">
+      <div style="font-size:3rem;margin-bottom:0.75rem">&#129518;</div>
+      <p style="color:#9ca3af;font-weight:700">Yuklanmoqda...</p>
     </div>
   </div>
 
@@ -175,61 +175,64 @@
 <script src="js/quarters.js"></script>
 <script>
 (async () => {
-  const profile = await requireAuth();
-  if (!profile) return;
+  try {
+    const profile = await requireAuth();
+    if (!profile) return;
 
-  // Pending teacher
-  if (profile.role === 'pending_teacher') {
-    document.getElementById('pendingTeacher').classList.remove('hidden');
-  }
-
-  // User info
-  document.getElementById('userName').textContent = `${profile.first_name} ${profile.last_name}`;
-  document.getElementById('userGrade').textContent = `${profile.grade}-sinf`;
-  document.getElementById('userInfo').classList.remove('hidden');
-
-  // Admin link in navbar
-  if (profile.role === 'admin') {
-    const nav = document.querySelector('header nav');
-    if (nav) {
-      const adminLink = document.createElement('a');
-      adminLink.href = 'admin.html';
-      adminLink.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 hover:text-indigo-600';
-      adminLink.innerHTML = '&#9881; Admin';
-      nav.prepend(adminLink);
+    // Pending teacher
+    if (profile.role === 'pending_teacher') {
+      document.getElementById('pendingTeacher').classList.remove('hidden');
     }
+
+    // User info
+    document.getElementById('userName').textContent = `${profile.first_name} ${profile.last_name}`;
+    document.getElementById('userGrade').textContent = `${profile.grade}-sinf`;
+    document.getElementById('userInfo').classList.remove('hidden');
+
+    // Admin link in navbar
+    if (profile.role === 'admin') {
+      const nav = document.querySelector('header nav');
+      if (nav) {
+        const adminLink = document.createElement('a');
+        adminLink.href = 'admin.html';
+        adminLink.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-bold text-gray-600 hover:text-indigo-600';
+        adminLink.innerHTML = '&#9881; Admin';
+        nav.prepend(adminLink);
+      }
+    }
+
+    // Quarter banner
+    const qInfo = getCurrentQuarterInfo();
+    const banner = document.getElementById('quarterBanner');
+    const bannerContent = document.getElementById('bannerContent');
+    const bannerText = document.getElementById('bannerText');
+    const bannerStats = document.getElementById('bannerStats');
+
+    if (qInfo.isVacation) {
+      bannerContent.className = 'vacation-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
+      bannerText.innerHTML = `&#127942; ${qInfo.label} — ballar oltin tangaga almashadi`;
+    } else {
+      bannerContent.className = 'quarter-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
+      const remaining = getQuarterRemainingDays();
+      bannerText.innerHTML = `&#128142; ${qInfo.label} &bull; ${remaining} kun qoldi`;
+    }
+    banner.classList.remove('hidden');
+
+    // Stats
+    const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
+    bannerStats.innerHTML = `<span>&#128142; ${stats.diamonds}</span>`;
+
+    // Daily info
+    const todayCount = await getTodayProblemsCount(profile.id);
+    document.getElementById('todayCount').textContent = todayCount;
+    document.getElementById('dailyProgress').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
+    document.getElementById('navDiamonds').textContent = stats.diamonds;
+    document.getElementById('dailyInfo').classList.remove('hidden');
+  } catch (err) {
+    console.error('Index load error:', err);
+  } finally {
+    document.getElementById('loading').style.display = 'none';
   }
-
-  // Quarter banner
-  const qInfo = getCurrentQuarterInfo();
-  const banner = document.getElementById('quarterBanner');
-  const bannerContent = document.getElementById('bannerContent');
-  const bannerText = document.getElementById('bannerText');
-  const bannerStats = document.getElementById('bannerStats');
-
-  if (qInfo.isVacation) {
-    bannerContent.className = 'vacation-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
-    bannerText.innerHTML = `&#127942; ${qInfo.label} — ballar oltin tangaga almashadi`;
-  } else {
-    bannerContent.className = 'quarter-banner rounded-xl px-4 py-2.5 flex items-center justify-between text-white text-sm font-bold';
-    const remaining = getQuarterRemainingDays();
-    bannerText.innerHTML = `&#128142; ${qInfo.label} &bull; ${remaining} kun qoldi`;
-  }
-  banner.classList.remove('hidden');
-
-  // Stats
-  const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
-  bannerStats.innerHTML = `<span>&#128142; ${stats.diamonds}</span>`;
-
-  // Daily info
-  const todayCount = await getTodayProblemsCount(profile.id);
-  document.getElementById('todayCount').textContent = todayCount;
-  document.getElementById('dailyProgress').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
-  document.getElementById('navDiamonds').textContent = stats.diamonds;
-  document.getElementById('dailyInfo').classList.remove('hidden');
-
-  // Hide loading
-  document.getElementById('loading').style.display = 'none';
 })();
 </script>
 </body>
