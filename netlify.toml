@@ -17,3 +17,8 @@
   from = "/api/r2-upload"
   to = "/.netlify/functions/r2-upload"
   status = 200
+
+# Supabase free tier keep-alive: har 6 kunda ping (7 kunlik inaktivlik limitidan oldin)
+# Oyning 1, 7, 13, 19, 25 kunlari soat 06:00 UTC da ishlaydi
+[functions."keep-alive"]
+  schedule = "0 6 */6 * *"
