@@ -64,9 +64,9 @@ async function getSession() {
   return session;
 }
 
-/** Joriy foydalanuvchi profilini olish */
-async function getProfile() {
-  const session = await getSession();
+/** Joriy foydalanuvchi profilini olish (sessiya berilsa, qayta so'ralmaydi) */
+async function getProfile(session) {
+  session = session || await getSession();
   if (!session) return null;
 
   const { data, error } = await _sb
@@ -86,7 +86,7 @@ async function requireAuth() {
     window.location.href = '/auth.html';
     return null;
   }
-  const profile = await getProfile();
+  const profile = await getProfile(session);
   if (!profile) {
     window.location.href = '/auth.html';
     return null;
@@ -98,7 +98,7 @@ async function requireAuth() {
 async function redirectIfLoggedIn() {
   const session = await getSession();
   if (session) {
-    const profile = await getProfile();
+    const profile = await getProfile(session);
     if (profile) {
       if (profile.role === 'admin') {
         window.location.href = '/admin.html';
@@ -241,12 +241,10 @@ async function getGameHistory(userId, limit = 50) {
 
 /** Sinf bo'yicha leaderboard */
 async function getLeaderboard(grade, quarter, academicYear) {
+  // Bitta so'rov: sinf bo'yicha filtrlangan sessiyalar + profil ma'lumoti birga olinadi
   const { data, error } = await _sb
     .from('game_sessions')
-    .select(`
-      user_id,
-      profiles!inner(first_name, last_name, grade)
-    `)
+    .select('user_id, score, diamonds, problems_solved, profiles!inner(first_name, last_name, grade)')
     .eq('profiles.grade', grade)
     .eq('quarter', quarter)
     .eq('academic_year', academicYear)
@@ -254,7 +252,7 @@ async function getLeaderboard(grade, quarter, academicYear) {
 
   if (error) return [];
 
-  // Aggregate by user
+  // Foydalanuvchi bo'yicha agregatsiya (bir martalik o'tish)
   const map = {};
   data.forEach(row => {
     const uid = row.user_id;
@@ -268,26 +266,10 @@ async function getLeaderboard(grade, quarter, academicYear) {
         total_problems: 0
       };
     }
+    map[uid].total_score += row.score;
+    map[uid].total_diamonds += row.diamonds;
+    map[uid].total_problems += row.problems_solved;
   });
-
-  // Need separate query for aggregation
-  const { data: sessions, error: sErr } = await _sb
-    .from('game_sessions')
-    .select('user_id, score, diamonds, problems_solved')
-    .eq('quarter', quarter)
-    .eq('academic_year', academicYear)
-    .eq('is_vacation', false)
-    .in('user_id', Object.keys(map));
-
-  if (!sErr) {
-    sessions.forEach(s => {
-      if (map[s.user_id]) {
-        map[s.user_id].total_score += s.score;
-        map[s.user_id].total_diamonds += s.diamonds;
-        map[s.user_id].total_problems += s.problems_solved;
-      }
-    });
-  }
 
   return Object.values(map)
     .sort((a, b) => b.total_diamonds - a.total_diamonds)

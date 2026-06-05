@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>UzMath Mini — Matematika o'yini</title>
+    <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
@@ -171,7 +172,6 @@
   </main>
 
 <script src="js/supabase.js"></script>
-<script src="https://cdn.tailwindcss.com"></script>
 <script src="js/quarters.js"></script>
 <script>
 (async () => {
@@ -218,12 +218,14 @@
     }
     banner.classList.remove('hidden');
 
-    // Stats
-    const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
+    // Stats + kunlik ma'lumot (parallel — ketma-ket kutilmaydi)
+    const [stats, todayCount] = await Promise.all([
+      getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear),
+      getTodayProblemsCount(profile.id)
+    ]);
     bannerStats.innerHTML = `<span>&#128142; ${stats.diamonds}</span>`;
 
     // Daily info
-    const todayCount = await getTodayProblemsCount(profile.id);
     document.getElementById('todayCount').textContent = todayCount;
     document.getElementById('dailyProgress').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
     document.getElementById('navDiamonds').textContent = stats.diamonds;

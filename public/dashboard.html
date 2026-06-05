@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard — UzMath Mini</title>
+    <link rel="stylesheet" href="/styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
@@ -118,7 +119,6 @@
   </main>
 
   <script src="js/supabase.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
 <script src="js/quarters.js"></script>
   <script>
     const MODE_NAMES = {
@@ -154,28 +154,30 @@
       const progress = getQuarterProgress();
       document.getElementById('quarterProgress').style.width = progress + '%';
 
+      // Barcha statistikalar bitta parallel batch'da olinadi (ketma-ket emas)
+      const [stats, todayCount, todayStats, history] = await Promise.all([
+        getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear),
+        getTodayProblemsCount(profile.id),
+        getTodayStats(profile.id),
+        getGameHistory(profile.id, 50)
+      ]);
+
       // Quarter stats
-      const stats = await getQuarterStats(profile.id, qInfo.quarter, qInfo.academicYear);
       document.getElementById('statDiamonds').textContent = stats.diamonds;
       const solved = stats.problemsSolved || 0;
       const correct = stats.correct || 0;
       document.getElementById('statProblems').textContent = `${formatNumber(solved)} / ${formatNumber(correct)}`;
 
       // Today's stats
-      const todayCount = await getTodayProblemsCount(profile.id);
       document.getElementById('todayCount').textContent = todayCount;
       document.getElementById('dailyBar').style.width = Math.min(100, (todayCount / 200) * 100) + '%';
 
       // Today's detailed stats (correct/wrong)
-      const todayStats = await getTodayStats(profile.id);
       document.getElementById('todayCorrect').textContent = todayStats.correct;
       document.getElementById('todayWrong').textContent = todayStats.wrong;
       const total = todayStats.correct + todayStats.wrong;
       const accuracy = total > 0 ? Math.round((todayStats.correct / total) * 100) : 0;
       document.getElementById('todayAccuracy').textContent = accuracy + '%';
-
-      // Game history
-      const history = await getGameHistory(profile.id, 50);
       if (history.length === 0) {
         document.getElementById('historyEmpty').classList.remove('hidden');
       } else {
