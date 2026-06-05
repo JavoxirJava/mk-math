@@ -310,6 +310,48 @@ async function getStudentStats(userId) {
   return data;
 }
 
+/**
+ * Bir nechta o'quvchining chorak statistikasi + yillik oltin tangasi — BITTA so'rovda.
+ * N+1 muammosini bartaraf etadi (har o'quvchi uchun alohida so'rov o'rniga).
+ * Qaytaradi: { [userId]: { score, diamonds, goldCoins, problemsSolved, correct, wrong } }
+ */
+async function getStudentsStatsBulk(userIds, quarter, academicYear) {
+  const result = {};
+  userIds.forEach(id => {
+    result[id] = { score: 0, diamonds: 0, goldCoins: 0, problemsSolved: 0, correct: 0, wrong: 0 };
+  });
+  if (userIds.length === 0) return result;
+
+  const { data, error } = await _sb
+    .from('game_sessions')
+    .select('user_id, score, diamonds, gold_coins, problems_solved, correct_count, wrong_count, is_vacation, quarter')
+    .in('user_id', userIds)
+    .eq('academic_year', academicYear);
+
+  if (error) return result;
+
+  data.forEach(r => {
+    const agg = result[r.user_id];
+    if (!agg) return;
+    // Joriy chorak statistikasi
+    if (r.quarter === quarter) {
+      if (!r.is_vacation) {
+        agg.score += r.score;
+        agg.diamonds += r.diamonds;
+      }
+      agg.problemsSolved += r.problems_solved;
+      agg.correct += r.correct_count;
+      agg.wrong += r.wrong_count;
+    }
+    // Yillik oltin tanga (barcha choraklar, faqat ta'til davri)
+    if (r.is_vacation) {
+      agg.goldCoins += r.gold_coins;
+    }
+  });
+
+  return result;
+}
+
 // ════════════════════════════════════════
 //  ADMIN HELPERS
 // ════════════════════════════════════════
