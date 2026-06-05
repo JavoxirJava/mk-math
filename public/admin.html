@@ -146,9 +146,14 @@
     })();
 
     async function loadData() {
-      _pendingTeachers = await getPendingTeachers();
-      _approvedTeachers = await getAllTeachers();
-      const students = await getAllStudents();
+      // 3 ta so'rov parallel (ketma-ket emas)
+      const [pending, approved, students] = await Promise.all([
+        getPendingTeachers(),
+        getAllTeachers(),
+        getAllStudents()
+      ]);
+      _pendingTeachers = pending;
+      _approvedTeachers = approved;
 
       document.getElementById('pendingCount').textContent = _pendingTeachers.length;
       document.getElementById('teacherCount').textContent = _approvedTeachers.length;

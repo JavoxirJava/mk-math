@@ -186,12 +186,10 @@
 
     async function loadStudentStats() {
       const qInfo = getCurrentQuarterInfo();
-      // Batch load stats for each student
-      for (const student of _allStudents) {
-        const stats = await getQuarterStats(student.id, qInfo.quarter, qInfo.academicYear);
-        const gold = await getYearlyGoldCoins(student.id, qInfo.academicYear);
-        _studentStatsCache[student.id] = { ...stats, goldCoins: gold };
-      }
+      // Barcha o'quvchilarning statistikasi BITTA so'rovda (avval har biri uchun
+      // 2 ta alohida so'rov ketardi — 31 o'quvchi = 62 so'rov). Endi 1 ta so'rov.
+      const ids = _allStudents.map(s => s.id);
+      _studentStatsCache = await getStudentsStatsBulk(ids, qInfo.quarter, qInfo.academicYear);
     }
 
     function renderStudents(students) {
